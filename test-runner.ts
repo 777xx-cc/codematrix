@@ -242,6 +242,184 @@ int main() {
 }`,
     expect: '120\n4\n',
   },
+  {
+    lang: 'java', name: 'java-e28 筛选及格成绩',
+    code: `public class Main {
+    public static void main(String[] args) {
+        int[] scores = {90, 45, 78, 60, 88};
+        int count = 0, sum = 0;
+        for (int i = 0; i < scores.length; i++) {
+            if (scores[i] >= 60) { count++; sum += scores[i]; }
+        }
+        System.out.println("count = " + count);
+        System.out.println("avg = " + sum / count);
+    }
+}`,
+    expect: 'count = 4\navg = 79\n',
+  },
+  {
+    lang: 'java', name: 'java-e37 查表数组模拟工厂',
+    code: `public class Main {
+    public static void main(String[] args) {
+        int[] codes = {1, 2, 3, 2};
+        String[] names = {"", "circle", "square", "triangle"};
+        for (int i = 0; i < codes.length; i++) {
+            System.out.println(names[codes[i]]);
+        }
+    }
+}`,
+    expect: 'circle\nsquare\ntriangle\nsquare\n',
+  },
+  {
+    lang: 'java', name: 'java-e38 数字字符替换',
+    code: `public class Main {
+    public static void main(String[] args) {
+        String s = "a1b2c3";
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c >= '0' && c <= '9') System.out.print("*");
+            else System.out.print(c);
+        }
+        System.out.println("");
+    }
+}`,
+    expect: 'a*b*c*\n',
+  },
+  {
+    lang: 'cpp', name: 'cpp-e28 排序去重',
+    code: `#include <iostream>
+using namespace std;
+int main() {
+    int a[5] = {5, 1, 3, 1, 5};
+    for (int i = 0; i < 5; i++) {
+        for (int j = 0; j + 1 < 5 - i; j++) {
+            if (a[j] > a[j + 1]) { int t = a[j]; a[j] = a[j + 1]; a[j + 1] = t; }
+        }
+    }
+    int prev = -1;
+    for (int i = 0; i < 5; i++) {
+        if (a[i] != prev) {
+            if (prev != -1) cout << " ";
+            cout << a[i];
+            prev = a[i];
+        }
+    }
+    cout << "\\n";
+    return 0;
+}`,
+    expect: '1 3 5\n',
+  },
+  {
+    lang: 'cpp', name: 'cpp-e38 选择排序降序',
+    code: `#include <iostream>
+using namespace std;
+int main() {
+    int a[6] = {3, 7, 1, 8, 2, 9};
+    for (int i = 0; i < 6; i++) {
+        int m = i;
+        for (int j = i + 1; j < 6; j++) {
+            if (a[j] > a[m]) m = j;
+        }
+        if (m != i) { int t = a[i]; a[i] = a[m]; a[m] = t; }
+    }
+    for (int i = 0; i < 6; i++) {
+        if (i > 0) cout << " ";
+        cout << a[i];
+    }
+    cout << "\\n";
+    return 0;
+}`,
+    expect: '9 8 7 3 2 1\n',
+  },
+  {
+    lang: 'cpp', name: 'cpp-e40 括号匹配栈',
+    code: `#include <iostream>
+#include <string>
+using namespace std;
+int main() {
+    string s = "((())())";
+    char st[8] = {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '};
+    int top = 0, ok = 1;
+    for (int i = 0; i < s.length(); i++) {
+        if (s[i] == '(') { st[top] = s[i]; top++; }
+        else {
+            if (top == 0) ok = 0;
+            else top--;
+        }
+    }
+    if (top != 0) ok = 0;
+    if (ok == 1) cout << "YES\\n";
+    else cout << "NO\\n";
+    return 0;
+}`,
+    expect: 'YES\n',
+  },
+  {
+    lang: 'c', name: 'c-e28 算术交换两数',
+    code: `#include <stdio.h>
+int main() {
+    int a = 10, b = 20;
+    a = a + b;
+    b = a - b;
+    a = a - b;
+    printf("a = %d\\n", a);
+    printf("b = %d\\n", b);
+    return 0;
+}`,
+    expect: 'a = 20\nb = 10\n',
+  },
+  {
+    lang: 'c', name: 'c-e29 手写 strlen',
+    code: `#include <stdio.h>
+int main() {
+    char s[] = "hello";
+    int n = 0;
+    while (s[n] != '\\0') n++;
+    printf("len = %d\\n", n);
+    return 0;
+}`,
+    expect: 'len = 5\n',
+  },
+  {
+    lang: 'c', name: 'c-e33 冒泡排序',
+    code: `#include <stdio.h>
+int main() {
+    int a[5] = {64, 25, 12, 22, 11};
+    for (int i = 0; i < 5; i++) {
+        for (int j = 0; j + 1 < 5 - i; j++) {
+            if (a[j] > a[j + 1]) { int t = a[j]; a[j] = a[j + 1]; a[j + 1] = t; }
+        }
+    }
+    for (int i = 0; i < 5; i++) {
+        if (i > 0) printf(" ");
+        printf("%d", a[i]);
+    }
+    printf("\\n");
+    return 0;
+}`,
+    expect: '11 12 22 25 64\n',
+  },
+  {
+    lang: 'c', name: 'c-e37 数组模拟栈',
+    code: `#include <stdio.h>
+int main() {
+    int st[4] = {0, 0, 0, 0};
+    int top = 0;
+    st[top] = 1; top++;
+    st[top] = 2; top++;
+    st[top] = 3; top++;
+    top--;
+    top--;
+    st[top] = 4; top++;
+    for (int i = 0; i < top; i++) {
+        if (i > 0) printf(" ");
+        printf("%d", st[i]);
+    }
+    printf("\\n");
+    return 0;
+}`,
+    expect: '1 4\n',
+  },
 ]
 
 async function main() {

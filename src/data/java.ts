@@ -1724,5 +1724,122 @@ class Rectangle extends Shape {
       explanation: '两遍遍历的经典统计题。注意整数除法截断：467/6=77；高于平均分是严格大于。',
       hints: ['int sum = 0; for 循环累加', 'int avg = sum / scores.length;', '第二遍 if (scores[i] > avg) count++;'],
     },
+    // ===== 第 9~15 章配套练习 =====
+    {
+      id: 'java-e25', type: 'choice', title: '为什么用 StringBuilder', difficulty: 2, tags: ['第9章', '常用类库'],
+      question: '在循环中拼接一万次字符串，String 比 StringBuilder 慢的根本原因是？',
+      options: ['A. String 有同步锁', 'B. String 不可变，每次拼接都新建对象并复制全部旧内容', 'C. StringBuilder 用缓存', 'D. 编译器优化不同'],
+      answer: 'B',
+      explanation: 'String 不可变：s += x 会新建更长的字符串并复制旧内容，循环一万次就复制一万次；StringBuilder 在内部缓冲区原地追加。',
+    },
+    {
+      id: 'java-e26', type: 'fill', title: '包装类转换', difficulty: 2, tags: ['第9章', '常用类库'],
+      question: '把字符串 "123" 转成 int 的标准写法是？Integer 为 null 时自动拆箱会发生什么？',
+      answer: 'int n = Integer.parseInt("123")；Integer 为 null 拆箱时抛 NullPointerException',
+      explanation: 'parseInt 是包装类的静态方法；拆箱相当于调用 intValue()，null 调用方法必空指针。',
+    },
+    {
+      id: 'java-e27', type: 'choice', title: 'try-with-resources', difficulty: 3, tags: ['第10章', 'IO'],
+      question: 'try (BufferedReader r = ...) { ... } 这种写法最大的好处是？',
+      options: ['A. 读取速度更快', 'B. 代码块结束后自动 close()，即使抛异常也不泄漏', 'C. 不需要处理异常', 'D. 可以读更大的文件'],
+      answer: 'B',
+      explanation: 'try-with-resources 对实现 AutoCloseable 的资源自动调用 close()，告别 finally 手写关流的样板代码。',
+    },
+    {
+      id: 'java-e28', type: 'coding', title: '编程：筛选及格成绩（Stream 思想）', difficulty: 3, tags: ['第11章', 'Stream'],
+      question: '用循环实现 Stream 的 filter + count 思想：统计 scores = {90, 45, 78, 60, 88} 中及格（>=60）的人数和平均分（整数除法）。',
+      starterCode: `public class Main {
+    public static void main(String[] args) {
+        int[] scores = {90, 45, 78, 60, 88};
+        // 统计及格人数 count 与及格总分 sum
+        // 输出 count = ? 和 avg = ?（sum / count）
+    }
+}`,
+      expectedOutput: 'count = 4\navg = 79\n',
+      answer: 'int count = 0, sum = 0; for (int i = 0; i < scores.length; i++) { if (scores[i] >= 60) { count++; sum += scores[i]; } } 输出后 avg = sum / count = 316/4 = 79。',
+      explanation: '等价于 scores.stream().filter(s -> s >= 60) 后的 count 与求和：filter 筛选、终端操作聚合。',
+      hints: ['if (scores[i] >= 60) { count++; sum += scores[i]; }', '316 / 4 = 79'],
+    },
+    {
+      id: 'java-e29', type: 'choice', title: 'start 与 run 的区别', difficulty: 3, tags: ['第12章', '多线程'],
+      question: '创建 Thread 对象后直接调用 run() 而不是 start()，会发生什么？',
+      options: ['A. 编译错误', 'B. 在当前线程同步执行，不会创建新线程', 'C. 创建两个线程', 'D. 抛出异常'],
+      answer: 'B',
+      explanation: 'run() 只是普通方法调用；只有 start() 才会让 JVM 创建新线程并异步执行 run()。',
+    },
+    {
+      id: 'java-e30', type: 'fill', title: 'synchronized 的作用', difficulty: 3, tags: ['第12章', '多线程'],
+      question: '两个线程对共享变量 count 各自增一万次，结果常小于两万。根本原因是什么？如何解决？',
+      answer: 'count++ 是"读-加-写"三步复合操作，多线程指令交错导致互相覆盖；用 synchronized 加锁（或 AtomicInteger）保证原子性',
+      explanation: '这是线程安全的经典案例：复合操作非原子，需加锁使同一时刻只有一个线程执行。',
+    },
+    {
+      id: 'java-e31', type: 'choice', title: 'Java 中的正则转义', difficulty: 3, tags: ['第13章', '正则'],
+      question: '在 Java 代码中表示"匹配一个数字"的正则，字符串应写成？',
+      options: ['A. "\\d"', 'B. "\\\\d"', 'C. "/d/"', 'D. "[0-9]" 以外都不对'],
+      answer: 'B',
+      explanation: 'Java 字符串中 \\\\ 才是一个真正的反斜杠，所以正则 \\d 要写 "\\\\d"。注意 D 的 [0-9] 也能匹配数字，但题目问的是 \\d 写法。',
+    },
+    {
+      id: 'java-e32', type: 'fill', title: 'matches 与 find', difficulty: 4, tags: ['第13章', '正则'],
+      question: 'String.matches() 和 Matcher.find() 的匹配语义有什么区别？各自适合什么场景？',
+      answer: 'matches 要求整个字符串完全符合模式（校验场景）；find 在字符串中寻找下一个匹配片段、可循环找全部（提取场景）',
+      explanation: '校验手机号用 matches；从日志提取所有 IP 用 Pattern + Matcher 的 find 循环。',
+    },
+    {
+      id: 'java-e33', type: 'choice', title: 'var 的类型', difficulty: 2, tags: ['第14章', '新特性'],
+      question: 'var name = "弈"; 执行后，再写 name = 123; 会怎样？',
+      options: ['A. 正常运行，var 是动态类型', 'B. 编译错误：name 已被推断为 String', 'C. 运行时报错', 'D. 自动转型'],
+      answer: 'B',
+      explanation: 'var 只是书写省略，类型在编译期确定为 String 后不再可变——Java 始终是静态类型语言。',
+    },
+    {
+      id: 'java-e34', type: 'fill', title: 'record 记录类', difficulty: 3, tags: ['第14章', '新特性'],
+      question: 'record Point(int x, int y) {} 会自动生成哪些成员？访问器方法的名字是什么形式？',
+      answer: '自动生成构造方法、x()/y() 访问器、equals()、hashCode()、toString()；访问器不带 get 前缀，写作 p.x()',
+      explanation: 'record 是不可变数据载体，字段默认 final 且无 setter，适合 DTO 和复合返回值。',
+    },
+    {
+      id: 'java-e35', type: 'choice', title: '单例模式要点', difficulty: 3, tags: ['第15章', '设计模式'],
+      question: '实现单例模式的两个核心要点是？',
+      options: ['A. final 类 + final 方法', 'B. 私有构造方法 + 静态方法返回唯一实例', 'C. 继承 + 多态', 'D. 接口 + 泛型'],
+      answer: 'B',
+      explanation: '私有构造堵住外部 new 的通道，静态方法掌握唯一实例的发放权。枚举单例 enum Singleton { INSTANCE } 是最简洁安全的写法。',
+    },
+    {
+      id: 'java-e36', type: 'fill', title: '观察者模式场景', difficulty: 3, tags: ['第15章', '设计模式'],
+      question: '观察者模式适合什么场景？它由哪两个角色构成？',
+      answer: '一个对象状态变化需自动通知多个对象的场景（事件监听、消息订阅）；由 Subject（被观察者，维护列表并通知）和 Observer（观察者，实现 update）构成',
+      explanation: '核心是订阅-通知机制，GUI 事件、消息队列、数据绑定都是它的变体。',
+    },
+    {
+      id: 'java-e37', type: 'coding', title: '编程：手写简单工厂', difficulty: 4, tags: ['第15章', '设计模式'],
+      question: '不用类和接口，用数组 + 循环模拟工厂的分发思想：给定 codes = {1, 2, 3, 2}，1 打印 circle、2 打印 square、3 打印 triangle，逐个输出对应图形名。',
+      starterCode: `public class Main {
+    public static void main(String[] args) {
+        int[] codes = {1, 2, 3, 2};
+        // 按 codes 逐个输出 circle / square / triangle
+    }
+}`,
+      expectedOutput: 'circle\nsquare\ntriangle\nsquare\n',
+      answer: 'if-else if 链或查表数组：String[] names = {"", "circle", "square", "triangle"}; 循环 System.out.println(names[codes[i]]);',
+      explanation: '查表数组是工厂分发思想的最小实现：把"类型码 → 具体行为"的映射集中在一处，调用方无需 if-else。',
+      hints: ['用字符串数组做映射表', 'names[codes[i]] 直接取'],
+    },
+    {
+      id: 'java-e38', type: 'coding', title: '编程：正则思想的替换（引擎版）', difficulty: 4, tags: ['第13章', '正则'],
+      question: '手动实现简化版"按规则替换"：字符数组 s = "a1b2c3"，把其中的数字字符替换为 *，输出结果（提示：用 charAt 遍历判断范围）。',
+      starterCode: `public class Main {
+    public static void main(String[] args) {
+        String s = "a1b2c3";
+        // 遍历每个字符，数字则输出 *，否则原样输出
+        // 最后换行
+    }
+}`,
+      expectedOutput: 'a*b*c*\n',
+      answer: 'for (int i = 0; i < s.length(); i++) { char c = s.charAt(i); if (c >= \'0\' && c <= \'9\') System.out.print("*"); else System.out.print(c); } 最后 println。',
+      explanation: '正则 re.sub("\\d", "*", s) 的手动等价版：范围判断替代模式匹配，理解正则引擎背后的基本逻辑。',
+      hints: ['charAt(i) 取字符', 'c >= \'0\' && c <= \'9\' 判断数字'],
+    },
   ],
 }

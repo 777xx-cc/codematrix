@@ -1745,5 +1745,181 @@ counts = {}
       explanation: '每轮把最大值冒泡到末尾，内层上界 n-1-i 逐轮缩短。交换用 nums[j], nums[j+1] = nums[j+1], nums[j]。',
       hints: ['n = len(nums)', 'range(n - 1 - i)', '元组解包交换两个元素'],
     },
+    // ===== 第 7~15 章配套练习 =====
+    {
+      id: 'py-e25', type: 'choice', title: 'with 语句的好处', difficulty: 2, tags: ['第7章', '文件'],
+      question: 'with open("a.txt") as f: 相比 f = open("a.txt") 的最大优势是？',
+      options: ['A. 读取更快', 'B. 出了 with 块自动关闭文件，异常也不泄漏', 'C. 不用指定编码', 'D. 支持更多格式'],
+      answer: 'B',
+      explanation: 'with 是上下文管理器协议：无论正常结束还是中途异常，__exit__ 都会关闭文件。',
+    },
+    {
+      id: 'py-e26', type: 'coding', title: '编程：JSON 风格统计', difficulty: 3, tags: ['第7章', '文件与模块'],
+      question: '给定成绩字典 scores = {"弈": 92, "明": 58, "华": 85}，找出最高分者的姓名并输出 "最高分: 弈 92"（提示：max 配 key 参数）。',
+      starterCode: `scores = {"弈": 92, "明": 58, "华": 85}
+# 找出最高分者并输出：最高分: 弈 92
+`,
+      expectedOutput: '最高分: 弈 92\n',
+      answer: 'top = max(scores, key=scores.get)；print(f"最高分: {top} {scores[top]}")',
+      explanation: 'max(dict, key=dict.get) 按键对应的值找最大键，是字典统计的惯用套路。',
+      hints: ['max(scores, key=scores.get)', 'f-string 输出'],
+    },
+    {
+      id: 'py-e27', type: 'choice', title: 'randint 的范围', difficulty: 2, tags: ['第8章', '标准库'],
+      question: 'random.randint(1, 10) 可能生成的最大值是？',
+      options: ['A. 9', 'B. 10', 'C. 11', 'D. 1'],
+      answer: 'B',
+      explanation: 'randint 是闭区间含两端，与 range(1, 10) 不含 10 相反——高频考点。',
+    },
+    {
+      id: 'py-e28', type: 'coding', title: '编程：Counter 词频统计', difficulty: 3, tags: ['第8章', '标准库'],
+      question: '不用 Counter 也能体会其思想：统计 "apple banana apple orange apple banana" 中各单词出现次数，按出现次数从多到少输出每行 "单词 次数"（apple 3、banana 2、orange 1）。',
+      starterCode: `words = "apple banana apple orange apple banana".split()
+# 用字典统计词频，按次数降序输出 "单词 次数"
+`,
+      expectedOutput: 'apple 3\nbanana 2\norange 1\n',
+      answer: 'd = {}; for w in words: d[w] = d.get(w, 0) + 1；再 sorted(d.items(), key=lambda x: -x[1]) 遍历输出。',
+      explanation: 'd.get(w, 0) + 1 是计数器的手写版；Counter(words).most_common() 一行等价。排序用次数的负数实现降序。',
+      hints: ['d[w] = d.get(w, 0) + 1', 'sorted(d.items(), key=lambda x: -x[1])'],
+    },
+    {
+      id: 'py-e29', type: 'fill', title: 'yield 的执行时机', difficulty: 3, tags: ['第9章', '生成器'],
+      question: '含 yield 的函数被调用时，函数体会立即执行吗？生成器相比列表在内存上的优势是？',
+      answer: '不会：调用只返回生成器对象，每次 next() 才推进到下一个 yield；生成器惰性求值，任意时刻只持有当前元素，内存占用恒定',
+      explanation: '这就是生成器能处理无限序列和超大文件的原因——现用现算，不落全部数据。',
+    },
+    {
+      id: 'py-e30', type: 'coding', title: '编程：生成器版斐波那契', difficulty: 4, tags: ['第9章', '生成器'],
+      question: '写一个生成器函数 fib() 用 yield 依次产出斐波那契数列，取前 10 项求和并输出（0,1,1,2,3,5,8,13,21,34 的和为 88）。',
+      starterCode: `def fib():
+    a, b = 0, 1
+    while True:
+        # 用 yield 产出 a，再更新 a, b
+        pass
+
+# 取前 10 项求和输出
+`,
+      expectedOutput: '88\n',
+      answer: 'yield a 后 a, b = b, a + b；取值用 g = fib() 再 sum(next(g) for _ in range(10))。',
+      explanation: 'yield 让函数在产出值后暂停，下次 next 从暂停处继续——无限数列也能安全定义。',
+      hints: ['yield a', 'a, b = b, a + b', 'sum(next(g) for _ in range(10))'],
+    },
+    {
+      id: 'py-e31', type: 'fill', title: '装饰器等价式', difficulty: 3, tags: ['第10章', '装饰器'],
+      question: '@timer 写在 def work(): 上方，等价于哪句赋值？包装函数为什么写成 wrapper(*args, **kwargs)？',
+      answer: '等价于 work = timer(work)；*args, **kwargs 接住任意参数，使装饰器能包装任何签名的函数',
+      explanation: '@ 只是语法糖：函数定义后立刻传给装饰器并用返回值替换原名绑定。',
+    },
+    {
+      id: 'py-e32', type: 'coding', title: '编程：手写计数装饰器', difficulty: 4, tags: ['第10章', '装饰器'],
+      question: '不用装饰器语法，手动实现其等价逻辑：写函数 call3(func) 让传入的函数执行 3 次。对 hello()（打印 "hi"）使用后输出三行 hi。',
+      starterCode: `def call3(func):
+    def wrapper():
+        # 调用 func() 三次
+        pass
+    return wrapper
+
+def hello():
+    print("hi")
+
+# 用 call3 包装 hello 并调用
+`,
+      expectedOutput: 'hi\nhi\nhi\n',
+      answer: 'wrapper 里 for _ in range(3): func()；最后 hello3 = call3(hello); hello3()。',
+      explanation: 'hello3 = call3(hello) 就是 @call3 的本质——装饰器只是这句赋值的语法糖。',
+      hints: ['for _ in range(3): func()', 'hello3 = call3(hello) 然后 hello3()'],
+    },
+    {
+      id: 'py-e33', type: 'choice', title: 'match 与 search', difficulty: 3, tags: ['第11章', '正则'],
+      question: '对 "hello123" 使用 re.match(r"\\d+", s) 的结果是？',
+      options: ['A. 匹配到 123', 'B. None——match 只从开头匹配，开头不是数字', 'C. 报错', 'D. 匹配到 hello'],
+      answer: 'B',
+      explanation: 'match 只从字符串开头尝试；全文查找要用 search 或 findall。',
+    },
+    {
+      id: 'py-e34', type: 'coding', title: '编程：提取数字求和', difficulty: 3, tags: ['第11章', '正则'],
+      question: '用 re.findall 从 "苹果12个，香蕉30个，橙子8个" 中提取所有数字并求和输出（12+30+8=50）。',
+      starterCode: `import re
+text = "苹果12个，香蕉30个，橙子8个"
+# 提取所有数字求和输出
+`,
+      expectedOutput: '50\n',
+      answer: 'nums = re.findall(r"\\d+", text) 得到字符串列表，sum(map(int, nums)) 求和输出。',
+      explanation: 'findall 返回的是字符串，求和前必须 int 转换——map(int, ...) 批量转换最简洁。',
+      hints: ['re.findall(r"\\d+", text)', 'sum(map(int, nums))'],
+    },
+    {
+      id: 'py-e35', type: 'choice', title: '403 状态码', difficulty: 2, tags: ['第12章', '爬虫'],
+      question: '爬虫收到 HTTP 403 状态码，意味着？',
+      options: ['A. 网页不存在', 'B. 服务器拒绝访问（可能触发反爬）', 'C. 请求成功', 'D. 需要重定向'],
+      answer: 'B',
+      explanation: '403 Forbidden：服务器拒绝。常见原因：缺 User-Agent、频率过高。404 才是不存在。',
+    },
+    {
+      id: 'py-e36', type: 'fill', title: '爬虫合规', difficulty: 2, tags: ['第12章', '爬虫'],
+      question: 'robots.txt 是什么？requests 拿不到、但浏览器里能看到的数据，说明页面用了什么技术？',
+      answer: 'robots.txt 是网站的爬虫告示牌，声明不欢迎抓取的路径；JS 动态渲染——需 Selenium 或直接请求数据接口',
+      explanation: '判断方法：右键"查看网页源代码"搜不到目标数据而 F12 Elements 里能看到，即为动态加载。',
+    },
+    {
+      id: 'py-e37', type: 'coding', title: '编程：继承与面积', difficulty: 4, tags: ['第13章', '面向对象'],
+      question: '定义 Shape 基类（含 name 属性）和子类 Circle（半径 r，area() 返回 3.14*r*r）。创建 r=2 的 Circle，输出 "Circle 面积: 12.56"。',
+      starterCode: `class Shape:
+    def __init__(self, name):
+        self.name = name
+
+class Circle(Shape):
+    def __init__(self, r):
+        # 调用父类构造传入 "Circle"，再存半径
+        pass
+    def area(self):
+        pass
+
+c = Circle(2)
+# 输出：Circle 面积: 12.56
+`,
+      expectedOutput: 'Circle 面积: 12.56\n',
+      answer: 'super().__init__("Circle")；self.r = r；area 返回 3.14 * self.r ** 2；print(f"{c.name} 面积: {c.area()}")。',
+      explanation: 'super().__init__ 把父类字段交给父类初始化；c.name 继承自 Shape。',
+      hints: ['super().__init__("Circle")', '3.14 * self.r ** 2', 'f"{c.name} 面积: {c.area()}"'],
+    },
+    {
+      id: 'py-e38', type: 'choice', title: '@property 的调用', difficulty: 3, tags: ['第13章', '面向对象'],
+      question: '被 @property 装饰的 area 方法，外部调用的写法是？',
+      options: ['A. c.area()', 'B. c.area（像属性一样，不加括号）', 'C. Circle.area()', 'D. property(c.area)'],
+      answer: 'B',
+      explanation: '@property 把方法伪装成属性访问；配 @area.setter 还能在赋值时校验。',
+    },
+    {
+      id: 'py-e39', type: 'choice', title: 'assert vs raise', difficulty: 3, tags: ['第14章', '测试调试'],
+      question: '为什么正式的用户输入校验不能用 assert？',
+      options: ['A. assert 太慢', 'B. python -O 优化模式下 assert 会被整体移除', 'C. assert 不能带消息', 'D. assert 只能用于数字'],
+      answer: 'B',
+      explanation: 'assert 是开发期自检，可被 -O 关闭；面向用户的校验必须 if + raise 保证永远生效。',
+    },
+    {
+      id: 'py-e40', type: 'fill', title: 'unittest 约定', difficulty: 2, tags: ['第14章', '测试调试'],
+      question: 'unittest 中测试类和测试方法的命名约定是什么？setUp 方法何时执行？',
+      answer: '测试类继承 unittest.TestCase；测试方法以 test_ 开头；setUp 在每个测试方法运行前自动执行',
+      explanation: '框架按命名约定自动发现用例；setUp/tearDown 负责每个用例前后的准备与清理。',
+    },
+    {
+      id: 'py-e41', type: 'coding', title: '编程：迷你通讯录查询', difficulty: 4, tags: ['第15章', '综合'],
+      question: '实现通讯录模糊查询：contacts = {"张三": "138", "张四": "139", "李五": "137"}，查询关键字 "张"，按字典序输出每个匹配项 "姓名: 电话"。',
+      starterCode: `contacts = {"张三": "138", "张四": "139", "李五": "137"}
+keyword = "张"
+# 模糊匹配并排序输出 "姓名: 电话"
+`,
+      expectedOutput: '张三: 138\n张四: 139\n',
+      answer: 'for name in sorted(contacts): if keyword in name: print(f"{name}: {contacts[name]}")',
+      explanation: 'keyword in name 做子串模糊匹配；sorted(contacts) 按姓名排序输出，对应第 15 章通讯录项目的查询功能。',
+      hints: ['if keyword in name', 'sorted(contacts) 排序'],
+    },
+    {
+      id: 'py-e42', type: 'fill', title: 'pop 的默认值', difficulty: 3, tags: ['第15章', '综合'],
+      question: 'contacts.pop(name, None) 中第二参数 None 起什么作用？为什么删除场景要用它？',
+      answer: '键不存在时返回 None 而不是抛 KeyError；删除"可能不存在的人"时可用返回值区分情况给出友好提示',
+      explanation: '带默认值的 pop 把异常分支变成正常分支，是字典删除的健壮写法。',
+    },
   ],
 }

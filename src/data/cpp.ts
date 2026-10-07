@@ -1724,5 +1724,211 @@ int main() {
       explanation: '字符比较本质是 ASCII 数值比较。大写为 H 和 C 共 2 个，小写为 e/l/l/o/p/p 共 6 个，数字 2024 共 4 个。',
       hints: ['s[i] >= \'A\' && s[i] <= \'Z\'', '三个 if 分开写或 if-else 链均可'],
     },
+    {
+      id: 'cpp-e25', type: 'choice', title: '指针数组辨析', difficulty: 5, tags: ['指针'],
+      question: '声明 int *arr[5]; 中，arr 的本质是？',
+      options: [
+        'A. 指向 int 的指针',
+        'B. 含 5 个 int* 元素的数组（指针数组）',
+        'C. 指向含 5 个 int 数组的指针',
+        'D. 含 5 个 int 的数组',
+      ],
+      answer: 'B',
+      explanation: '[] 优先级高于 *：arr 先与 [5] 结合，是数组；元素类型为 int*。若写作 int (*arr)[5] 才是数组指针。二者是经典易混点。',
+    },
+    {
+      id: 'cpp-e26', type: 'fill', title: '指针算术的步长', difficulty: 4, tags: ['指针'],
+      question: 'int a[10]; int *p = a; 在 int 占 4 字节的平台上，p + 2 相对 p 前进了 ______ 字节。',
+      answer: '8',
+      explanation: '指针加减以“元素大小”为步长：p + 2 的地址 = p + 2 × sizeof(int) = p + 8。指针算术永远按指向类型缩放，不是按字节加 2。',
+    },
+    {
+      id: 'cpp-e27', type: 'choice', title: 'map 的 operator[] 副作用', difficulty: 4, tags: ['STL'],
+      question: 'std::map<std::string, int> m; 执行 int v = m["apple"]; 时若 "apple" 不存在，会发生什么？',
+      options: [
+        'A. 抛出 std::out_of_range 异常',
+        'B. v 是未定义值',
+        'C. 自动插入 ("apple", 0) 并返回该值的引用',
+        'D. 编译错误',
+      ],
+      answer: 'C',
+      explanation: 'operator[] 对缺失键会值初始化插入（int 为 0）。只想查找不想插入时用 find() 或 at()（at 不存在会抛 out_of_range）。',
+    },
+    {
+      id: 'cpp-e28', type: 'coding', title: '手写排序与去重', difficulty: 4, tags: ['数组', '算法'],
+      question: '不使用 STL，对数组 {5, 1, 3, 1, 5} 先升序排序，再去重输出一行：1 3 5（空格分隔，行尾换行）。',
+      starterCode: `#include <iostream>
+using namespace std;
+
+int main() {
+    int a[5] = {5, 1, 3, 1, 5};
+    /* 冒泡排序 */
+
+    /* 去重并输出 */
+
+    cout << "\\n";
+    return 0;
+}`,
+      expectedOutput: '1 3 5',
+      answer: '冒泡排序后，用哨兵变量 prev = -1 记录上一个输出的值：a[i] != prev 才输出并更新 prev；prev != -1 时先输出空格。',
+      explanation: '排序把相同元素聚到一起，去重只需与“上一个已输出的值”比较。哨兵 -1 保证第一个元素一定被输出（本题数据均为正数）。',
+      hints: ['for (int j = 0; j + 1 < 5 - i; j++) 内层冒泡', 'int prev = -1; if (a[i] != prev) { ... prev = a[i]; }'],
+    },
+    {
+      id: 'cpp-e29', type: 'choice', title: 'RAII 核心思想', difficulty: 4, tags: ['内存管理'],
+      question: 'C++ 的 RAII 机制核心思想是？',
+      options: [
+        'A. 手动配对 new/delete，靠程序员自觉',
+        'B. 资源获取即初始化：在构造函数中获取资源，析构函数自动释放',
+        'C. 依赖垃圾回收器自动回收',
+        'D. 把资源全部声明为全局变量统一管理',
+      ],
+      answer: 'B',
+      explanation: 'RAII 把资源生命周期绑定到对象生命周期：栈对象离开作用域自动析构，即使异常抛出也能保证释放。智能指针、fstream、lock_guard 都是 RAII 的应用。',
+    },
+    {
+      id: 'cpp-e30', type: 'fill', title: 'unique_ptr 所有权转移', difficulty: 4, tags: ['内存管理'],
+      question: 'std::unique_ptr<int> p1(new int(5)); 要把所有权转移给 p2，应写 p2 = ______;（提示：一个标准库函数模板）。',
+      answer: 'std::move(p1)',
+      explanation: 'unique_ptr 禁止拷贝（独占所有权），只能通过移动语义转移。转移后 p1 为空（nullptr）。shared_ptr 之间才能拷贝共享所有权。',
+    },
+    {
+      id: 'cpp-e31', type: 'choice', title: '模板参数推断冲突', difficulty: 5, tags: ['模板'],
+      question: 'template<typename T> T myMax(T a, T b); 调用 myMax(3, 5.5) 的结果是？',
+      options: [
+        'A. 返回 5.5',
+        'B. 返回 5',
+        'C. 编译错误：T 同时被推断为 int 和 double，发生冲突',
+        'D. 运行时异常',
+      ],
+      answer: 'C',
+      explanation: '两个实参都用于推断同一个 T，int 与 double 冲突。修法：myMax<double>(3, 5.5) 显式指定，或声明两个模板参数 template<typename T, typename U>。',
+    },
+    {
+      id: 'cpp-e32', type: 'fill', title: '模板实例化时机', difficulty: 3, tags: ['模板'],
+      question: '函数模板在 ______ 期完成实例化（由编译器生成具体类型的函数代码）。',
+      answer: '编译',
+      explanation: '模板是编译期机制：编译器按调用处的实参类型生成对应函数，错误也在编译期暴露（错误信息通常很长）。这与运行期多态（虚函数）形成对比。',
+    },
+    {
+      id: 'cpp-e33', type: 'choice', title: 'catch 的书写顺序', difficulty: 4, tags: ['异常'],
+      question: 'try 块可能抛出派生类异常，同时存在 catch(Base&) 与 catch(Derived&)，正确顺序是？',
+      options: [
+        'A. 先 catch(Base&) 后 catch(Derived&)',
+        'B. 先 catch(Derived&) 后 catch(Base&)，否则派生类分支永远不可达',
+        'C. 顺序无关，编译器自动选择最匹配的',
+        'D. 同一 try 只能写一个 catch',
+      ],
+      answer: 'B',
+      explanation: 'catch 按书写顺序匹配，父类引用能捕获子类对象。若父类在前，子类分支成为死代码（多数编译器会警告）。先具体后一般。',
+    },
+    {
+      id: 'cpp-e34', type: 'fill', title: '栈展开', difficulty: 4, tags: ['异常'],
+      question: 'throw 抛出异常后，沿调用链逐层退出函数、局部对象依次析构，直到匹配的 catch，这个过程称为 ______。',
+      answer: '栈展开（stack unwinding）',
+      explanation: '栈展开保证局部 RAII 对象（智能指针、文件、锁）正常析构，异常才不会泄漏资源。若展开期间析构函数再抛异常，程序直接 terminate。',
+    },
+    {
+      id: 'cpp-e35', type: 'choice', title: 'while (cin >> x) 的退出', difficulty: 4, tags: ['输入输出'],
+      question: '竞赛常见写法 while (cin >> x) 在什么情况下结束循环？',
+      options: [
+        'A. x 读到 0 时',
+        'B. 读取失败（类型不符或遇到 EOF），流进入 fail 状态，表达式求值为假',
+        'C. 读到空格时',
+        'D. 永远不会结束，是死循环',
+      ],
+      answer: 'B',
+      explanation: 'operator>> 返回流对象本身，可转换为布尔：成功为真，失败（failbit/eofbit）为假。文件末尾（EOF）或类型不匹配都会结束循环。',
+    },
+    {
+      id: 'cpp-e36', type: 'fill', title: 'stringstream 复用', difficulty: 5, tags: ['输入输出'],
+      question: '要复用同一个 stringstream 对象 ss 做第二次解析，必须先调用 ______ 清除 eof/fail 状态标志，再用 str("") 清空内容。',
+      answer: 'ss.clear()',
+      explanation: '只 str("") 不清状态位，上次读完留下的 eofbit 会让后续 >> 全部失败。clear() 清标志、str() 换内容，两步缺一不可。',
+    },
+    {
+      id: 'cpp-e37', type: 'choice', title: 'Lambda 值捕获 vs 引用捕获', difficulty: 4, tags: ['Lambda'],
+      question: 'int x = 10; auto f = [=]() mutable { x = 100; }; f(); 之后 x 的值是？',
+      options: [
+        'A. 100',
+        'B. 10：[=] 值捕获的是副本，mutable 只允许改副本；[&] 引用捕获才会改外部 x',
+        'C. 编译错误',
+        'D. 未定义行为',
+      ],
+      answer: 'B',
+      explanation: '[=] 按值捕获，lambda 体内是拷贝；mutable 去掉 operator() 的 const 使副本可改，但不影响外部。[&] 捕获引用，改动直接作用于外部变量（注意悬垂引用风险）。',
+    },
+    {
+      id: 'cpp-e38', type: 'coding', title: '选择排序（降序）', difficulty: 4, tags: ['排序', '算法'],
+      question: '对数组 {3, 7, 1, 8, 2, 9} 用选择排序降序排列，输出一行：9 8 7 3 2 1（空格分隔）。',
+      starterCode: `#include <iostream>
+using namespace std;
+
+int main() {
+    int a[6] = {3, 7, 1, 8, 2, 9};
+    /* 每轮从 i 之后找最大值，与 a[i] 交换 */
+
+    /* 输出 */
+
+    cout << "\\n";
+    return 0;
+}`,
+      expectedOutput: '9 8 7 3 2 1',
+      answer: 'int m = i; 内层 if (a[j] > a[m]) m = j; 循环结束后交换 a[i] 与 a[m]；输出用 i>0 控制前置空格。',
+      explanation: '选择排序每轮只交换一次（交换次数最少），但比较次数固定 n(n-1)/2，不稳定。找最大值用 > 号即得降序。',
+      hints: ['int m = i; for (int j = i+1; j < 6; j++)', 'if (m != i) { int t = a[i]; a[i] = a[m]; a[m] = t; }'],
+    },
+    {
+      id: 'cpp-e39', type: 'choice', title: '撤销功能的数据结构', difficulty: 3, tags: ['数据结构'],
+      question: '实现编辑器的“撤销（Undo）”功能，最合适的数据结构是？',
+      options: [
+        'A. 队列：先进先出',
+        'B. 栈：后进先出，恰好对应“最后做的操作最先撤销”',
+        'C. 单链表',
+        'D. 二叉搜索树',
+      ],
+      answer: 'B',
+      explanation: '撤销顺序与操作顺序相反，是天然的 LIFO。重做（Redo）同样用另一个栈：撤销时把操作压入重做栈。',
+    },
+    {
+      id: 'cpp-e40', type: 'coding', title: '数组模拟栈：括号匹配', difficulty: 5, tags: ['栈', '字符串'],
+      question: '用字符数组模拟栈，判断括号串 "((())())" 是否匹配：遇 ( 入栈，遇 ) 弹栈；栈空时遇 ) 或扫描完栈非空则不匹配。输出 YES 或 NO。',
+      starterCode: `#include <iostream>
+#include <string>
+using namespace std;
+
+int main() {
+    string s = "((())())";
+    char st[8] = {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '};
+    int top = 0, ok = 1;
+    /* 扫描入栈/弹栈 */
+
+    /* 判断并输出 YES 或 NO */
+
+    return 0;
+}`,
+      expectedOutput: 'YES',
+      answer: 's[i]==\'(\' 时 st[top++]=s[i]；否则若 top==0 则 ok=0，否则 top--；最后 top!=0 也置 ok=0。',
+      explanation: '栈是括号匹配的标配：每个左括号期待一个右括号，最近未配对的左括号在栈顶。((())()) 恰好全部配对，输出 YES。',
+      hints: ['st[top] = s[i]; top++; 可写成两行', '结尾检查 if (top != 0) ok = 0;'],
+    },
+    {
+      id: 'cpp-e41', type: 'choice', title: 'sync_with_stdio(false) 的代价', difficulty: 4, tags: ['竞赛技巧'],
+      question: '执行 ios::sync_with_stdio(false); 加速后，下列做法正确的是？',
+      options: [
+        'A. 可以继续自由混用 printf 与 cout',
+        'B. 不要再混用 C 风格与 C++ 风格 IO，否则输出顺序可能错乱',
+        'C. cin 读取会变慢',
+        'D. 必须手动 fflush 才能保证输出',
+      ],
+      answer: 'B',
+      explanation: '该语句解除两套 IO 的同步缓冲，cin/cout 提速显著；代价是两套流各自缓冲，混用时输出顺序不再保证。竞赛中全程只用一套即可。',
+    },
+    {
+      id: 'cpp-e42', type: 'fill', title: '0x3f3f3f3f 无穷大', difficulty: 5, tags: ['竞赛技巧'],
+      question: '竞赛常用 memset(dp, 0x3f, sizeof dp) 初始化“无穷大”，得到每个 int 都是 0x3f3f3f3f，其十进制值是 ______（约 1e9）。',
+      answer: '1061109567',
+      explanation: 'memset 按字节填充，0x3f 填满四字节得 0x3f3f3f3f = 1061109567 ≈ 1e9；两倍约 2.1e9 仍小于 INT_MAX（约 2.147e9），做加法松弛不溢出。',
+    },
   ],
 }

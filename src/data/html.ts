@@ -1710,5 +1710,222 @@ function render() {
       explanation: 'a 默认带下划线和蓝色，先 text-decoration:none 清除，再用 :hover 加回下划线实现交互反馈。',
       hints: ['text-decoration: none 去默认下划线', ':hover 中恢复 underline'],
     },
+    {
+      id: 'html-e25', type: 'choice', title: '固定定位', difficulty: 3, tags: ['CSS', '定位'],
+      question: '让一个“返回顶部”按钮固定在浏览器窗口右下角、滚动页面也不移动，应使用？',
+      options: [
+        'A. position: relative',
+        'B. position: absolute',
+        'C. position: fixed',
+        'D. position: sticky',
+      ],
+      answer: 'C',
+      explanation: 'fixed 相对视口定位，脱离文档流且不受滚动影响；absolute 相对最近的定位祖先，会随页面滚动；sticky 是“滚动到阈值后吸附”的混合模式。',
+    },
+    {
+      id: 'html-e26', type: 'coding', title: 'Grid 三列卡片布局', difficulty: 4, tags: ['CSS', 'Grid'],
+      question: '用 CSS Grid 实现三列等宽卡片布局，卡片间隙 16px。三张卡片内容分别为“性能”“安全”“生态”。',
+      starterCode: `<!DOCTYPE html>
+<html>
+<head>
+<style>
+  body { background:#0b1020; color:#e2e8f0; font-family:sans-serif; padding:24px; }
+  .cards {
+    /* 在这里写 Grid 三列布局 */
+
+  }
+  .card { background:#1e293b; padding:20px; border-radius:12px; }
+</style>
+</head>
+<body>
+  <div class="cards">
+    <div class="card">性能</div>
+    <div class="card">安全</div>
+    <div class="card">生态</div>
+  </div>
+</body>
+</html>`,
+      expectedOutput: '性能\n安全\n生态',
+      answer: '.cards { display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; }',
+      explanation: 'repeat(3, 1fr) 表示三等分（fr 是剩余空间份数单位）；gap 同时控制行列间隙。比 float/inline-block 布局简洁且天然响应式。',
+      hints: ['display: grid;', 'grid-template-columns: repeat(3, 1fr); gap: 16px;'],
+    },
+    {
+      id: 'html-e27', type: 'choice', title: 'DOM 是什么', difficulty: 2, tags: ['DOM'],
+      question: 'DOM（文档对象模型）的本质是？',
+      options: [
+        'A. 一门新的编程语言',
+        'B. 浏览器把 HTML 解析成的节点树，JavaScript 通过它读写页面的结构与内容',
+        'C. 一个 CSS 框架',
+        'D. 一种服务器软件',
+      ],
+      answer: 'B',
+      explanation: 'DOM 是 HTML 的内存表示：每个标签、属性、文本都是树上的节点。document.getElementById、textContent、appendChild 等都是对这棵树的操作。',
+    },
+    {
+      id: 'html-e28', type: 'coding', title: '点击计数按钮', difficulty: 3, tags: ['DOM', 'JavaScript'],
+      question: '实现点击计数：按钮初始显示“点击了 0 次”，每点击一次数字加 1。补全 onclick 中的更新逻辑。',
+      starterCode: `<!DOCTYPE html>
+<html>
+<body style="background:#0b1020; padding:24px;">
+  <button id="btn" style="padding:10px 20px; border-radius:8px; border:none; background:#58e6d9; cursor:pointer;">点击了 0 次</button>
+  <script>
+    var n = 0;
+    var btn = document.getElementById('btn');
+    btn.onclick = function() {
+      n = n + 1;
+      /* 更新按钮文字 */
+
+    };
+  </script>
+</body>
+</html>`,
+      expectedOutput: '点击了 0 次',
+      answer: "btn.textContent = '点击了 ' + n + ' 次';",
+      explanation: 'onclick 绑定回调函数；textContent 更新节点文本。字符串与数字用 + 拼接时数字自动转字符串。这是“事件 + DOM 更新”的最小闭环。',
+      hints: ["btn.textContent = '点击了 ' + n + ' 次';"],
+    },
+    {
+      id: 'html-e29', type: 'choice', title: '高性能动画属性', difficulty: 4, tags: ['CSS', '性能'],
+      question: '下列哪组 CSS 属性做动画性能最好（走 GPU 合成层，不触发重排重绘）？',
+      options: [
+        'A. width / height',
+        'B. top / left',
+        'C. transform / opacity',
+        'D. margin / padding',
+      ],
+      answer: 'C',
+      explanation: '改 width/top/margin 会触发回流（重算布局），代价高；transform 与 opacity 只影响合成层，由 GPU 处理，能实现 60fps 流畅动画。位移用 translate、缩放用 scale。',
+    },
+    {
+      id: 'html-e30', type: 'coding', title: '呼吸灯按钮', difficulty: 4, tags: ['CSS', '动画'],
+      question: '用 @keyframes 为按钮添加“呼吸灯”效果：透明度在 1 与 0.5 之间变化，1.5 秒一个周期，无限循环。',
+      starterCode: `<!DOCTYPE html>
+<html>
+<head>
+<style>
+  body { background:#0b1020; padding:24px; }
+  .pulse { padding:12px 28px; border:none; border-radius:999px; background:#7c5cff; color:#fff; font-size:16px; }
+  /* 在这里定义 @keyframes 并应用到 .pulse */
+
+</style>
+</head>
+<body>
+  <button class="pulse">呼吸按钮</button>
+</body>
+</html>`,
+      expectedOutput: '呼吸按钮',
+      answer: '@keyframes breathe { 0%,100% { opacity:1; } 50% { opacity:0.5; } } .pulse { animation: breathe 1.5s infinite; }',
+      explanation: '@keyframes 定义关键帧序列；animation 属性把动画绑定到元素：名称、时长、次数（infinite 无限）。还可加 ease-in-out 让变化更平滑。',
+      hints: ['@keyframes breathe { ... }', 'animation: breathe 1.5s infinite;'],
+    },
+    {
+      id: 'html-e31', type: 'choice', title: 'CSS 自定义属性', difficulty: 3, tags: ['CSS'],
+      question: ':root { --main: #58e6d9; } 定义后，在样式中使用这个变量的正确写法是？',
+      options: [
+        'A. color: $(--main);',
+        'B. color: var(--main);',
+        'C. color: use(--main);',
+        'D. color: @main;',
+      ],
+      answer: 'B',
+      explanation: 'CSS 变量（自定义属性）以 -- 开头定义、var() 函数读取，还可给回退值：var(--main, #000)。改一处 :root 变量即可全局换肤，是主题切换的基础。',
+    },
+    {
+      id: 'html-e32', type: 'fill', title: 'clamp() 流式字号', difficulty: 4, tags: ['CSS'],
+      question: 'font-size: clamp(12px, 2vw, 24px); 的含义是：首选值为 ______（随视口宽度缩放），但不小于 12px、不大于 24px。',
+      answer: '2vw',
+      explanation: 'clamp(最小, 首选, 最大) 把首选值夹在上下限之间：视口宽时字号按 2vw 增长，超过 24px 封顶、低于 12px 保底。一行代码实现流式排版，无需媒体查询。',
+    },
+    {
+      id: 'html-e33', type: 'choice', title: '不改原数组的方法', difficulty: 4, tags: ['JavaScript', 'ES6'],
+      question: '下列哪组数组方法都不会修改原数组（返回新数组或新值）？',
+      options: [
+        'A. push / pop / shift',
+        'B. sort / reverse',
+        'C. map / filter / reduce',
+        'D. splice / fill',
+      ],
+      answer: 'C',
+      explanation: 'map/filter 返回新数组，reduce 返回累积值，原数组不变——这正是函数式与 React 状态更新的要求。push、splice、sort、reverse 都是原地修改（原地变异方法）。',
+    },
+    {
+      id: 'html-e34', type: 'fill', title: '可选链运算符', difficulty: 3, tags: ['JavaScript', 'ES6'],
+      question: 'user?.address?.city 中的 ?. 称为 ______：左侧为 null 或 undefined 时直接短路返回 undefined，不再抛 TypeError。',
+      answer: '可选链',
+      explanation: '传统写法 user && user.address && user.address.city 冗长；?. 一层层安全下探。配套的还有空值合并 ??：仅在 null/undefined 时取右值（|| 会把 0、"" 也当假值）。',
+    },
+    {
+      id: 'html-e35', type: 'choice', title: '事件循环输出顺序', difficulty: 5, tags: ['JavaScript', '异步'],
+      question: 'console.log(1); setTimeout(() => console.log(2), 0); console.log(3); 的输出顺序是？',
+      options: [
+        'A. 1 2 3',
+        'B. 1 3 2',
+        'C. 2 1 3',
+        'D. 3 1 2',
+      ],
+      answer: 'B',
+      explanation: 'setTimeout 回调进宏任务队列，即使延迟 0 毫秒也要等当前同步代码全部执行完才轮到。事件循环：同步 → 微任务（Promise.then）→ 宏任务（setTimeout）。',
+    },
+    {
+      id: 'html-e36', type: 'fill', title: 'Promise 三态', difficulty: 4, tags: ['JavaScript', '异步'],
+      question: 'Promise 有 pending（进行中）、fulfilled（已成功）、______（已失败）三种状态，状态一旦确定（settled）就不可逆。',
+      answer: 'rejected',
+      explanation: 'pending → fulfilled 或 pending → rejected 只有一次跃迁，之后再调 resolve/reject 无效。then 接成功、catch 接失败、finally 兜底都会执行。',
+    },
+    {
+      id: 'html-e37', type: 'choice', title: 'preventDefault 的作用', difficulty: 3, tags: ['JavaScript', '事件'],
+      question: '给 <a> 标签绑定点击事件并调用 e.preventDefault()，作用是？',
+      options: [
+        'A. 阻止事件冒泡到父元素',
+        'B. 阻止默认行为（链接不发生页面跳转）',
+        'C. 移除该事件监听器',
+        'D. 停止后续所有 JavaScript 执行',
+      ],
+      answer: 'B',
+      explanation: 'preventDefault 阻止默认行为（链接跳转、表单提交、右键菜单）；阻止冒泡要用 e.stopPropagation()。二者互不相干，常一起考。',
+    },
+    {
+      id: 'html-e38', type: 'fill', title: 'input 与 change 的区别', difficulty: 3, tags: ['JavaScript', '事件'],
+      question: '文本框每输入一个字符就立即触发用 ______ 事件；失焦且内容有变化才触发用 change 事件。',
+      answer: 'input',
+      explanation: 'input 事件实时性最强（含粘贴、输入法组合结束），适合搜索建议、字数统计；change 滞后到失焦，适合最终校验。监听用 addEventListener(\'input\', fn)。',
+    },
+    {
+      id: 'html-e39', type: 'choice', title: 'localStorage 存对象', difficulty: 4, tags: ['JavaScript', '存储'],
+      question: 'localStorage.setItem("user", userObj) 直接存一个对象，后果是？',
+      options: [
+        'A. 正常存取，读回还是对象',
+        'B. 存成字符串 "[object Object]"：应先 JSON.stringify 序列化，读取时 JSON.parse 还原',
+        'C. 抛出异常',
+        'D. 浏览器自动序列化',
+      ],
+      answer: 'B',
+      explanation: 'Web Storage 只接受字符串，对象会被隐式 toString() 成 "[object Object]"。正确姿势：setItem("user", JSON.stringify(obj))，读取 const obj = JSON.parse(getItem("user"))。',
+    },
+    {
+      id: 'html-e40', type: 'fill', title: 'sessionStorage 生命周期', difficulty: 3, tags: ['JavaScript', '存储'],
+      question: '______Storage 的数据仅在当前标签页会话内有效，关闭标签页即清空（localStorage 则长期保留）。',
+      answer: 'session',
+      explanation: 'sessionStorage 按标签页隔离：两个标签页各有一份、互不影响，刷新不清空、关闭即消失。适合存表单草稿、一次性令牌等会话级数据。',
+    },
+    {
+      id: 'html-e41', type: 'choice', title: '数据驱动视图', difficulty: 4, tags: ['JavaScript', '架构'],
+      question: '“数据驱动视图”的核心做法是？',
+      options: [
+        'A. 业务变化时逐个找到 DOM 节点手动改',
+        'B. 只修改数据（状态），再由 render 函数按最新数据重新渲染页面',
+        'C. 多写几份 HTML 备份切换',
+        'D. 必须引入 jQuery',
+      ],
+      answer: 'B',
+      explanation: 'DOM 是数据的投影：state 变化 → render(state) 重绘。手动改 DOM 容易状态与界面脱节；React/Vue 把这个思想做成了虚拟 DOM 与响应式系统。',
+    },
+    {
+      id: 'html-e42', type: 'fill', title: '事件委托', difficulty: 4, tags: ['JavaScript', '事件'],
+      question: '把点击事件绑在父元素上，通过 e.target 判断实际被点击的子元素——这种利用事件 ______ 机制的技术叫事件委托。',
+      answer: '冒泡',
+      explanation: '事件从目标节点向上冒泡到 document。委托只需一个监听器即可管理所有（包括动态新增的）子元素，性能更好、代码更省。注意 e.target（实际触发者）与 e.currentTarget（绑定者）的区别。',
+    },
   ],
 }

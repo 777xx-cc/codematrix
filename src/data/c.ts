@@ -1797,5 +1797,212 @@ int main() {
       explanation: '一遍遍历同时维护三个统计量。注意整数除法截断而非四舍五入。',
       hints: ['int max = scores[0], min = scores[0], sum = 0;', 'sum += scores[i] 与比较更新同行'],
     },
+    {
+      id: 'c-e25', type: 'choice', title: '指针数组的元素类型', difficulty: 4, tags: ['指针', '字符串'],
+      question: 'char *days[] = {"Mon", "Tue", "Wed"}; 则 days[0] 的类型是？',
+      options: [
+        'A. char，值为 \'M\'',
+        'B. char*，指向字符串 "Mon" 首字符的指针',
+        'C. char[4]，整个字符串数组',
+        'D. string 类型',
+      ],
+      answer: 'B',
+      explanation: 'days 是指针数组：每个元素都是 char*，指向一个字符串字面量。days[0][0] 才是字符 \'M\'。C 没有 string 类型。',
+    },
+    {
+      id: 'c-e26', type: 'fill', title: '二级指针改指针', difficulty: 5, tags: ['指针'],
+      question: '函数要为调用者的指针变量分配内存（改变指针本身的指向），形参须是 int **，调用时传 ______（设调用处为 int *p;）。',
+      answer: '&p',
+      explanation: 'C 只有值传递：想在函数里改变一个变量，就传它的地址。改变 int 传 int*，改变 int* 就传 int**，即指针的地址 &p。',
+    },
+    {
+      id: 'c-e27', type: 'choice', title: '枚举的隐式取值', difficulty: 3, tags: ['枚举'],
+      question: 'enum Color { RED, GREEN = 5, BLUE }; 则 RED 与 BLUE 的值分别是？',
+      options: [
+        'A. 0 和 2',
+        'B. 1 和 6',
+        'C. 0 和 6',
+        'D. 编译错误',
+      ],
+      answer: 'C',
+      explanation: '枚举默认从 0 开始（RED=0）；显式赋值后，后续成员在前一个基础上 +1，故 BLUE = 5 + 1 = 6。枚举值允许重复（如再定义 X=5 也合法）。',
+    },
+    {
+      id: 'c-e28', type: 'coding', title: '不用临时变量交换两数', difficulty: 4, tags: ['运算符'],
+      question: '不使用临时变量与位运算，用加减法交换 a = 10、b = 20，输出两行："a = 20" 与 "b = 10"。',
+      starterCode: `#include <stdio.h>
+
+int main() {
+    int a = 10, b = 20;
+    /* 三行算术交换 */
+
+    printf("a = %d\\n", a);
+    printf("b = %d\\n", b);
+    return 0;
+}`,
+      expectedOutput: 'a = 20\nb = 10',
+      answer: 'a = a + b;（a=30）b = a - b;（b=10）a = a - b;（a=20）',
+      explanation: 'a 先存“和”，再用和减去旧 b 得旧 a 赋给 b，最后用和减去新 b（旧 a）得旧 b。面试经典题，注意溢出风险；异或法可避免溢出但可读性差。',
+      hints: ['a = a + b;', 'b = a - b; a = a - b;'],
+    },
+    {
+      id: 'c-e29', type: 'coding', title: '手写 my_strlen', difficulty: 3, tags: ['字符串'],
+      question: '不使用 string.h，手写循环求字符串 "hello" 的长度（不含 \\0），输出 "len = 5"。',
+      starterCode: `#include <stdio.h>
+
+int main() {
+    char s[] = "hello";
+    int n = 0;
+    /* 统计字符数 */
+
+    printf("len = %d\\n", n);
+    return 0;
+}`,
+      expectedOutput: 'len = 5',
+      answer: 'while (s[n] != \'\\0\') n++; —— 从 0 开始数到结尾标志为止。',
+      explanation: 'C 字符串以 \\0 结尾，strlen 的本质就是这样一趟扫描。\\0 的 ASCII 值是 0，所以也可写 while (s[n]) n++;。',
+      hints: ['while (s[n] != \'\\0\')', 'n++ 即可，无需数组下标再判断'],
+    },
+    {
+      id: 'c-e30', type: 'fill', title: '安全的字符串读入', difficulty: 4, tags: ['字符串', '安全'],
+      question: '读取一行字符串时，______ 比 scanf("%s") 更安全，因为它能限制最多读取的字符数，防止缓冲区溢出。',
+      answer: 'fgets',
+      explanation: 'scanf("%s") 不检查长度，超长输入直接溢出。fgets(buf, sizeof buf, stdin) 最多读 sizeof-1 个字符并补 \\0；注意它会保留行末换行符。',
+    },
+    {
+      id: 'c-e31', type: 'choice', title: 'realloc 的正确姿势', difficulty: 5, tags: ['动态内存'],
+      question: '直接写 p = realloc(p, newSize); 的隐患是？',
+      options: [
+        'A. 没有隐患，标准写法',
+        'B. realloc 失败返回 NULL，会覆盖原指针：原内存块泄漏且数据丢失',
+        'C. 一定会立即崩溃',
+        'D. 编译器报错',
+      ],
+      answer: 'B',
+      explanation: '正确做法：int *t = realloc(p, newSize); if (t != NULL) p = t; 失败时 p 仍指向旧块，可降级处理或释放。 realloc 还可能整体搬迁数据，旧地址一律失效。',
+    },
+    {
+      id: 'c-e32', type: 'fill', title: '释放后置空', difficulty: 3, tags: ['动态内存'],
+      question: 'free(p); 之后应立即写 ______，把指针置空，避免 p 成为悬空指针被再次使用或二次释放。',
+      answer: 'p = NULL',
+      explanation: 'free 只归还内存，不改变指针变量的值，p 仍指向已释放的地址（悬空指针）。置 NULL 后，对空指针 free 是安全的（标准允许），误用也能尽早暴露。',
+    },
+    {
+      id: 'c-e33', type: 'coding', title: '冒泡排序实战', difficulty: 3, tags: ['排序', '数组'],
+      question: '对数组 {64, 25, 12, 22, 11} 冒泡升序排序，输出一行：11 12 22 25 64（空格分隔）。',
+      starterCode: `#include <stdio.h>
+
+int main() {
+    int a[5] = {64, 25, 12, 22, 11};
+    /* 冒泡排序 */
+
+    /* 输出 */
+
+    printf("\\n");
+    return 0;
+}`,
+      expectedOutput: '11 12 22 25 64',
+      answer: '外层 i 控制轮数，内层 for (j = 0; j + 1 < 5 - i; j++) 相邻比较，a[j] > a[j+1] 则交换；输出用 i>0 控制前置空格。',
+      explanation: '每轮把最大值“冒泡”到末尾，已排序区不再参与比较（5 - i 收缩右边界）。可加 swapped 标志提前退出优化几乎有序的情况。',
+      hints: ['int t = a[j]; a[j] = a[j+1]; a[j+1] = t;', 'if (i > 0) printf(" ");'],
+    },
+    {
+      id: 'c-e34', type: 'choice', title: '几乎有序选什么排序', difficulty: 4, tags: ['排序'],
+      question: '对一个“几乎有序”的数组（每个元素离最终位置不超过 2 格），平均最快的排序是？',
+      options: [
+        'A. 冒泡排序',
+        'B. 插入排序：几乎有序时接近 O(n)',
+        'C. 快速排序',
+        'D. 选择排序',
+      ],
+      answer: 'B',
+      explanation: '插入排序的内层 while 只在逆序对上移动，几乎有序时每个元素只移动一两步，总代价近 O(n)。选择排序比较次数固定 O(n²)，快排在坏 pivot 下退化到 O(n²)。',
+    },
+    {
+      id: 'c-e35', type: 'fill', title: '递归的必要条件', difficulty: 3, tags: ['递归'],
+      question: '递归函数缺少 ______（终止条件，又称基例）会无限递归，最终耗尽调用栈，程序崩溃（stack overflow）。',
+      answer: '基例',
+      explanation: '递归两要素：终止条件 + 向终止条件收敛的递推。每次调用在栈上压入一帧（参数、返回地址、局部变量），无限递归会撑爆默认 1MB 左右的栈。',
+    },
+    {
+      id: 'c-e36', type: 'choice', title: '记忆化原理', difficulty: 4, tags: ['递归', '优化'],
+      question: '用“记忆化（memoization）”优化递归斐波那契的原理是？',
+      options: [
+        'A. 把递归改写成循环',
+        'B. 用数组缓存已算出的子问题结果，重复子问题直接查表，避免指数级重复计算',
+        'C. 调大栈空间',
+        'D. 减少函数参数个数',
+      ],
+      answer: 'B',
+      explanation: '朴素递归 fib(n) 是 O(2^n)：fib(5) 会被重复计算多次。开数组 memo[] 初始 -1，算过就存，时间降到 O(n)。这也是动态规划“自顶向下”的形态。',
+    },
+    {
+      id: 'c-e37', type: 'coding', title: '数组模拟栈', difficulty: 4, tags: ['栈', '数据结构'],
+      question: '用数组模拟栈：依次 push 1、2、3，pop 两次，再 push 4，最后自底向顶输出栈内元素：1 4。',
+      starterCode: `#include <stdio.h>
+
+int main() {
+    int st[4] = {0, 0, 0, 0};
+    int top = 0;
+    /* push 1, 2, 3；pop 两次；push 4 */
+
+    /* 自底向顶输出 */
+
+    printf("\\n");
+    return 0;
+}`,
+      expectedOutput: '1 4',
+      answer: 'push 写作 st[top++] = x;（或两行 st[top]=x; top++;），pop 即 top--;，最终遍历 i 从 0 到 top-1 输出。',
+      explanation: 'top 既表示栈内元素个数，也是下一个空位的下标。push 1/2/3 后 top=3，pop 两次 top=1，push 4 后栈为 [1, 4]。',
+      hints: ['st[top] = 1; top++; 重复三次', 'top--; top--; st[top] = 4; top++;'],
+    },
+    {
+      id: 'c-e38', type: 'choice', title: '循环队列判满', difficulty: 5, tags: ['队列', '数据结构'],
+      question: '用“牺牲一个存储单元”法实现的循环队列，队满条件是？',
+      options: [
+        'A. front == rear',
+        'B. (rear + 1) % capacity == front',
+        'C. rear == capacity',
+        'D. front == 0',
+      ],
+      answer: 'B',
+      explanation: '牺牲一格后 front==rear 只表示队空； rear 再前进一格就撞上 front 时表示满。取模让下标绕回 0，这就是“循环”的含义。另一种方案是额外记录元素个数。',
+    },
+    {
+      id: 'c-e39', type: 'choice', title: '头结点的作用', difficulty: 4, tags: ['链表'],
+      question: '带头结点的单链表，主要优点是？',
+      options: [
+        'A. 节省内存',
+        'B. 空表与非空表、头部与中间位置的插入删除操作完全统一，消除对第一个结点的特殊判断',
+        'C. 查找速度更快',
+        'D. 支持下标随机访问',
+      ],
+      answer: 'B',
+      explanation: '头结点（dummy node）是链表头指针永远指向的“假结点”。有了它，在表头插入/删除与在中间操作代码一致，空表也不用单独处理。代价是多一个结点的空间。',
+    },
+    {
+      id: 'c-e40', type: 'fill', title: '链表插入的顺序', difficulty: 4, tags: ['链表'],
+      question: '在结点 p 之后插入新结点 s：s->next = p->next; p->next = s; 这两句 ______（能/不能）交换顺序。',
+      answer: '不能',
+      explanation: '若先执行 p->next = s，p 与原来的后继结点之间的链接先断开，s->next = p->next 就变成 s 指向自己，链表断裂、后续结点全部丢失。先接后继、再改前驱。',
+    },
+    {
+      id: 'c-e41', type: 'fill', title: '检查 scanf 返回值', difficulty: 4, tags: ['输入输出', '健壮性'],
+      question: 'int ok = scanf("%d", &x); 健壮写法应检查 ok 是否为 ______；若不是，说明输入类型不匹配，需清理输入缓冲区后重试。',
+      answer: '1',
+      explanation: 'scanf 返回“成功读到的项数”，%d 一个转换应为 1；输入字母时返回 0 且坏字符留在缓冲区，不清掉会让后续读取一直失败（常见死循环根源）。',
+    },
+    {
+      id: 'c-e42', type: 'choice', title: '顺序表删除元素', difficulty: 3, tags: ['数组', '数据结构'],
+      question: '删除顺序表（数组）中下标为 k 的元素，正确做法是？',
+      options: [
+        'A. 直接把 a[k] 置为 0',
+        'B. 从下标 k 起，后续元素整体前移一位覆盖，长度 n 减 1',
+        'C. 与最后一个元素交换即可，顺序无所谓',
+        'D. 调用 realloc 缩小数组',
+      ],
+      answer: 'B',
+      explanation: 'for (i = k; i + 1 < n; i++) a[i] = a[i+1]; n--; 时间 O(n)。置 0 会混淆“空位”与真实数据 0；交换到末尾会破坏原有顺序，仅在无序集合中可用。',
+    },
   ],
 }
