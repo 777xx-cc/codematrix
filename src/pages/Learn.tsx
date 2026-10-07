@@ -6,18 +6,40 @@ import { annotations, type TermNote } from '../data/annotations'
 import CodeBlock from '../components/CodeBlock'
 import { ChevronRight, ListTree, GraduationCap, Eye, CheckCircle2, XCircle, StickyNote } from 'lucide-react'
 
-/** 渲染段内联 `代码` */
-function renderInline(text: string) {
+/** 渲染段内联 `代码`，并把批注栏解释过的名词用特殊颜色标注出来 */
+function renderInline(text: string, terms?: string[]) {
   const parts = text.split(/(`[^`]+`)/g)
-  return parts.map((p, i) =>
-    p.startsWith('`') && p.endsWith('`') ? (
-      <code key={i} className="px-1.5 py-0.5 mx-0.5 rounded bg-cyan-400/10 text-cyan-300 text-[0.85em] font-mono border border-cyan-400/15">
-        {p.slice(1, -1)}
-      </code>
-    ) : (
-      <span key={i}>{p}</span>
+  return parts.map((p, i) => {
+    if (p.startsWith('`') && p.endsWith('`')) {
+      return (
+        <code key={i} className="px-1.5 py-0.5 mx-0.5 rounded bg-cyan-400/10 text-cyan-300 text-[0.85em] font-mono border border-cyan-400/15">
+          {p.slice(1, -1)}
+        </code>
+      )
+    }
+    if (!terms || terms.length === 0) return <span key={i}>{p}</span>
+    // 长的名词优先匹配（如"指针数组"先于"指针"），转义正则特殊字符
+    const sorted = [...terms].sort((a, b) => b.length - a.length)
+    const re = new RegExp(`(${sorted.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'g')
+    const segs = p.split(re)
+    return (
+      <span key={i}>
+        {segs.map((s, j) =>
+          j % 2 === 1 ? (
+            <span
+              key={j}
+              className="text-amber-300 font-semibold border-b border-dashed border-amber-300/60 cursor-help"
+              title="该名词在右侧批注栏有解释"
+            >
+              {s}
+            </span>
+          ) : (
+            <span key={j}>{s}</span>
+          )
+        )}
+      </span>
     )
-  )
+  })
 }
 
 /** 课后练习单题：选择题点击判定，填空题点击显示答案 */
@@ -175,6 +197,7 @@ export default function LearnPage() {
             <div className="mt-8 space-y-10">
               {chapter.sections.map((sec, si) => {
                 const notes = annotations[chapter.id]?.[si]
+                const terms = notes?.map(n => n.term)
                 return (
                 <section key={si}>
                   <h2 className="text-lg font-bold flex items-center gap-2.5 mb-4">
@@ -190,7 +213,7 @@ export default function LearnPage() {
                     <div className="flex-1 min-w-0">
                       <div className="space-y-3 text-[15px] leading-8 text-slate-300">
                         {sec.content.map((p, pi) => (
-                          <p key={pi}>{renderInline(p)}</p>
+                          <p key={pi}>{renderInline(p, terms)}</p>
                         ))}
                       </div>
                       {sec.code && <CodeBlock code={sec.code.source} lang={sec.code.lang} caption={sec.code.caption} />}

@@ -592,6 +592,760 @@ img { max-width: 100%; height: auto; }`,
         },
       ],
     },
+    {
+      id: 'html-ch9',
+      title: '第 9 章 CSS 动画与过渡',
+      intro: '会动的网页才有生命力。本章掌握 transition 平滑过渡、@keyframes 关键帧动画、transform 变换三件套，让按钮、卡片、加载动画全部"活"起来——本站按钮的发光效果就是这么做的。',
+      sections: [
+        {
+          title: '9.1 transition 平滑过渡',
+          content: [
+            '`transition` 让属性变化"渐变"而非"突变"：transition: all 0.3s ease——属性名、时长、缓动曲线三要素。',
+            '触发方式：配合 :hover、:focus 或 JS 切换类名，属性值一变，过渡自动发生。',
+            '缓动曲线：linear 匀速、ease 默认（两头慢）、ease-in-out 更柔、cubic-bezier() 自定义弹跳感。',
+            '性能提示：只对 transform 和 opacity 做过渡最流畅（GPU 加速）；对 width/height/top 做过渡会触发重排，卡顿元凶。',
+          ],
+          code: {
+            lang: 'css',
+            caption: '按钮悬停放大发光',
+            source: `.btn {
+  background: #06b6d4;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.btn:hover {
+  transform: translateY(-2px) scale(1.05);   /* 上浮放大 */
+  box-shadow: 0 0 20px rgba(6,182,212,.6);   /* 发光 */
+}
+.btn:active { transform: scale(0.97); }      /* 按下回弹 */`,
+          },
+        },
+        {
+          title: '9.2 @keyframes 关键帧动画',
+          content: [
+            '`@keyframes` 定义动画的"关键姿势"：from/to 或百分比节点，浏览器自动补全中间帧。',
+            '使用：animation: 名字 时长 曲线 次数;——infinite 无限循环，alternate 来回往复。',
+            'animation-play-state: paused 可暂停；配合 JS 控制类名就能"播/停"动画。',
+            'loading 转圈、呼吸灯、打字机光标，都是几行 keyframes 的事。',
+          ],
+          code: {
+            lang: 'css',
+            caption: '呼吸灯与旋转加载圈',
+            source: `@keyframes breathe {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.3; }
+}
+.led { animation: breathe 1.6s ease-in-out infinite; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading {
+  width: 32px; height: 32px;
+  border: 3px solid #334155;
+  border-top-color: #06b6d4;   /* 只留一边亮色 */
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}`,
+          },
+        },
+        {
+          title: '9.3 transform 变换',
+          content: [
+            '`transform` 四大变换：translate 平移、scale 缩放、rotate 旋转、skew 斜切，可以组合使用。',
+            'transform 不影响文档流——元素"动了"但不挤压邻居，这是它和改 top/left 的本质区别，也是它流畅的原因。',
+            'transform-origin 改变变换中心点：默认正中心，scale 从左上角展开就写 0 0。',
+            '3D 入门：rotateX/rotateY 配合 perspective 透视和 transform-style: preserve-3d 可做卡片翻转效果。',
+          ],
+          code: {
+            lang: 'css',
+            caption: '卡片 3D 翻转',
+            source: `.card-wrap { perspective: 800px; }       /* 透视距离 */
+.card {
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+}
+.card-wrap:hover .card { transform: rotateY(180deg); }
+
+.card .back {
+  transform: rotateY(180deg);   /* 背面先翻过去 */
+  backface-visibility: hidden;  /* 背面朝人时隐藏 */
+}`,
+          },
+        },
+      ],
+      quiz: [
+        {
+          question: '为什么动画优先使用 transform 和 opacity？',
+          options: ['A. 写法简单', 'B. 它们由 GPU 合成层处理，不触发重排重绘，最流畅', 'C. 颜色更鲜艳', 'D. 兼容性更好'],
+          answer: 'B',
+          explanation: '改 width/top 会引发布局重算（重排），帧率骤降；transform/opacity 跳过布局和绘制，直接合成。',
+        },
+        {
+          question: 'animation: spin 1s linear infinite 中各值含义是？',
+          answer: '动画名 spin、时长 1 秒、匀速、无限循环',
+          explanation: '完整简写还可加延迟、方向（alternate 往返）、填充模式（forwards 停在末帧）等。',
+        },
+        {
+          question: 'transform: translateY(-2px) 与 top: -2px 的本质区别？',
+          answer: 'transform 是视觉变换、不影响文档流和邻居布局；top 参与布局计算，会引起重排',
+          explanation: '做悬浮位移效果永远用 transform，邻居元素纹丝不动且动画流畅。',
+        },
+      ],
+    },
+    {
+      id: 'html-ch10',
+      title: '第 10 章 CSS 变量与现代特性',
+      intro: 'CSS 早已不是"写死颜色值"的时代。本章学习 CSS 自定义属性（变量）、calc 计算、暗色模式适配——本站的整套暗黑主题就靠这些特性驱动。',
+      sections: [
+        {
+          title: '10.1 CSS 自定义属性（变量）',
+          content: [
+            '`CSS 变量`：--main-color: #06b6d4 定义，var(--main-color) 使用。改一处，全站变色——主题系统的基石。',
+            '定义在 :root 上是全局变量；定义在某个类上是局部变量（作用域跟随元素树）。',
+            'JS 可以读写 CSS 变量：document.documentElement.style.setProperty("--main-color", "red")——一行切换主题色。',
+            '回退值：var(--x, #999) 在 --x 未定义时用默认值，增强健壮性。',
+          ],
+          code: {
+            lang: 'css',
+            caption: '变量驱动的主题系统',
+            source: `:root {
+  --bg: #070a13;          /* 背景色 */
+  --accent: #06b6d4;      /* 主题色 */
+  --radius: 12px;         /* 圆角 */
+}
+.card {
+  background: var(--bg);
+  border: 1px solid var(--accent, #999);  /* 带回退 */
+  border-radius: var(--radius);
+}
+/* 换主题只需覆盖变量 */
+.christmas { --accent: #ef4444; }`,
+          },
+        },
+        {
+          title: '10.2 calc 与现代单位',
+          content: [
+            '`calc()` 混合单位计算：width: calc(100% - 200px)——"百分百减固定像素"这种需求只有它能写。',
+            '现代单位：vw/vh（视口宽高百分比）、clamp(最小, 首选, 最大) 流式尺寸、min()/max() 取边界。',
+            'clamp 做流式排版一绝：font-size: clamp(14px, 2vw, 22px)——随屏宽缩放但不出界。',
+            'calc 里加减号两侧必须有空格（calc(100%-20px) 是错的），乘除有限制，这是唯一易错点。',
+          ],
+          code: {
+            lang: 'css',
+            caption: 'calc 与 clamp 实战',
+            source: `.sidebar-layout {
+  display: flex;
+}
+.main {
+  width: calc(100% - 240px);  /* 侧栏 240px，主区自适应 */
+}
+
+h1 {
+  font-size: clamp(24px, 5vw, 48px);  /* 流式标题 */
+}
+.hero {
+  min-height: 60vh;             /* 视口高的 60% */
+  padding: max(20px, 4vw);      /* 内边距不小于 20px */
+}`,
+          },
+        },
+        {
+          title: '10.3 暗色模式与新选择器',
+          content: [
+            '`prefers-color-scheme` 媒体查询感知系统主题：@media (prefers-color-scheme: dark) 里的样式在用户开深色模式时自动启用。',
+            '配合 CSS 变量，暗色模式 = 换一组变量值，主样式一行不改。',
+            ':has() 父级选择器（终于来了）：form:has(input:invalid) 表单内有非法输入时给表单描红边。',
+            ':focus-visible 只在键盘导航时显示焦点框，鼠标点击不闪框——兼顾无障碍与美观。',
+          ],
+          code: {
+            lang: 'css',
+            caption: '自动跟随系统的暗色模式',
+            source: `:root {
+  --bg: #ffffff;
+  --text: #111111;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #070a13;      /* 系统深色时换变量 */
+    --text: #e2e8f0;
+  }
+}
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* :has 父级选中 */
+.card:has(img) { padding: 0; }        /* 含图片的卡片去内边距 */
+form:has(:invalid) { border-color: red; }`,
+          },
+        },
+      ],
+      quiz: [
+        {
+          question: 'CSS 变量定义和使用的正确写法是？',
+          options: ['A. $color: red; color: $color', 'B. --color: red; color: var(--color)', 'C. @color: red; color: @color', 'D. const color = red'],
+          answer: 'B',
+          explanation: 'CSS 自定义属性以 -- 开头定义、var() 引用；$ 是 Sass 预处理器的语法，别混淆。',
+        },
+        {
+          question: 'font-size: clamp(14px, 2vw, 22px) 的效果是？',
+          answer: '字号随视口宽度（2vw）变化，但最小 14px、最大 22px——流式且有界的排版',
+          explanation: 'clamp(下限, 首选值, 上限) 是响应式字号的现代标准写法，告别多个媒体查询断点。',
+        },
+        {
+          question: '实现"跟随系统深色模式"，需要哪两个技术配合？',
+          answer: 'prefers-color-scheme 媒体查询感知系统主题 + CSS 变量集中管理配色，媒体查询里只换变量值',
+          explanation: '样式全部引用变量，主题切换时覆盖 :root 上的变量定义即可全局换肤。',
+        },
+      ],
+    },
+    {
+      id: 'html-ch11',
+      title: '第 11 章 JavaScript 进阶：数组与对象',
+      intro: '真实网页开发 80% 在处理数据：列表渲染、筛选统计、状态管理。本章拿下 JS 数组方法全家桶（map/filter/reduce）和对象操作，写出函数式的优雅代码。',
+      sections: [
+        {
+          title: '11.1 数组方法全家桶',
+          content: [
+            '`map` 变形记：每个元素过一遍函数，返回新数组。[1,2,3].map(x => x*2) → [2,4,6]。渲染列表就靠它。',
+            '`filter` 过滤器：留下条件为真的元素。`find` 找第一个满足条件的，`some`/`every` 判断存在/全部。',
+            '`reduce` 万能聚合：把数组"折叠"成一个值——求和、分组、计数都能写，(累加器, 当前值) => 新累加器。',
+            '这些方法都不改原数组（返回新数组），链式调用行云流水：arr.filter(...).map(...).reduce(...)。',
+          ],
+          code: {
+            lang: 'javascript',
+            caption: '数据处理三连',
+            source: `const students = [
+  { name: "弈", score: 92 },
+  { name: "明", score: 58 },
+  { name: "华", score: 85 },
+];
+
+const passed = students.filter(s => s.score >= 60);
+const names = passed.map(s => s.name);        // ["弈", "华"]
+const avg = students.reduce((sum, s) => sum + s.score, 0)
+            / students.length;                 // 78.33
+
+// 渲染到页面（配合模板字符串）
+list.innerHTML = passed
+  .map(s => \`<li>\${s.name}: \${s.score}</li>\`)
+  .join("");`,
+          },
+        },
+        {
+          title: '11.2 对象操作与解构',
+          content: [
+            '对象字面量 { name: "弈", age: 18 }；取值用点 obj.name 或方括号 obj[key]（key 是变量时只能方括号）。',
+            '`解构赋值`：const { name, age } = student 一次性取出属性；数组也能解构 const [a, b] = [1, 2]。',
+            '`展开运算符` ...：{...obj, score: 100} 复制并覆盖属性；[...arr, 4] 复制并追加——不可变更新的标配。',
+            'Object.keys/values/entries 把对象转数组遍历；JSON.stringify/parse 与字符串互转（深拷贝的土办法）。',
+          ],
+          code: {
+            lang: 'javascript',
+            caption: '解构与展开',
+            source: `const stu = { name: "弈", age: 18, score: 92 };
+
+const { name, score } = stu;      // 解构取出
+console.log(name, score);
+
+// 不可变更新：不改原对象，生成新对象
+const updated = { ...stu, score: 100 };
+console.log(stu.score);           // 92（原对象没动）
+
+// 数组展开
+const arr = [1, 2, 3];
+const bigger = [...arr, 4, 5];    // [1,2,3,4,5]
+
+Object.entries(stu).forEach(([k, v]) => console.log(k, v));`,
+          },
+        },
+        {
+          title: '11.3 模板字符串与可选链',
+          content: [
+            '`模板字符串`用反引号包起来：\`你好 \${name}\`，变量直接嵌，还能换行——拼接 HTML 的神器。',
+            '`可选链` ?.：user?.address?.city——中间任何一环是 null/undefined 就短路返回 undefined，不再连环判空。',
+            '`空值合并` ??：值 ?? 默认值，只在 null/undefined 时用默认（0 和 "" 不算空，这是和 || 的关键区别）。',
+            '三件套合体：\`<li>\${user?.name ?? "匿名"}</li>\`——安全、简洁、可读。',
+          ],
+          code: {
+            lang: 'javascript',
+            caption: '现代 JS 三板斧',
+            source: `const user = { name: "弈" };  // 没有 address
+
+// 可选链：不报错
+console.log(user?.address?.city);   // undefined
+
+// 空值合并：0 也是有效值
+const count = data?.count ?? 0;
+// 对比：data.count || 10 会把 0 误判成"空"
+
+// 模板字符串渲染
+const html = \`
+  <div class="card">
+    <h3>\${user?.name ?? "匿名用户"}</h3>
+  </div>\`;
+document.body.insertAdjacentHTML("beforeend", html);`,
+          },
+        },
+      ],
+      quiz: [
+        {
+          question: 'map、filter、reduce 的共同点与区别是？',
+          options: ['A. 都改原数组', 'B. 都返回新结果且不改原数组；map 变形、filter 筛选、reduce 聚合成单值', 'C. 都只能用于数字', 'D. 没有区别'],
+          answer: 'B',
+          explanation: '三者都是纯函数式的"返回新值"风格，可安全链式组合；这是现代 JS 数据处理的基本范式。',
+        },
+        {
+          question: 'user?.address?.city 中的 ?. 作用是？',
+          answer: '可选链：左侧为 null/undefined 时整个表达式短路返回 undefined，不再抛 TypeError',
+          explanation: '替代 user && user.address && user.address.city 的连环判空，代码大幅清爽。',
+        },
+        {
+          question: 'count ?? 10 与 count || 10 的区别？',
+          answer: '?? 只在 null/undefined 时用默认值；|| 遇到 0、""、false 也会用默认值——数值 0 是合法值时必须用 ??',
+          explanation: '空值合并运算符专为"0 和空字符串也是有效数据"的场景设计。',
+        },
+      ],
+    },
+    {
+      id: 'html-ch12',
+      title: '第 12 章 JavaScript 异步入门',
+      intro: '网络请求、定时器、文件读取都是"耗时操作"。JS 用异步机制避免页面卡死。本章理解事件循环，掌握 Promise 与 async/await，写出不阻塞的现代代码。',
+      sections: [
+        {
+          title: '12.1 为什么需要异步',
+          content: [
+            'JS 是单线程的：同一时间只干一件事。如果网络请求"同步等结果"，页面会冻结几秒——按钮点不动、动画全停。',
+            '`异步`：发起任务后不傻等，先去干别的；结果好了再回来"回调"。setTimeout、fetch、事件监听都是异步。',
+            '`事件循环`（Event Loop）：JS 引擎不断检查"任务队列"，有完成的任务就执行它的回调——这是异步不卡页面的底层机制。',
+            '回调地狱：多层异步嵌套成金字塔，难读难维护——Promise 正是为终结它而生。',
+          ],
+          code: {
+            lang: 'javascript',
+            caption: '体会异步执行顺序',
+            source: `console.log("1. 开始");
+
+setTimeout(() => {
+  console.log("3. 定时器到点");
+}, 0);   // 即使 0 毫秒也要排队
+
+console.log("2. 结束");
+
+// 输出顺序：1 → 2 → 3
+// 定时器回调进任务队列，等主代码跑完才执行`,
+          },
+        },
+        {
+          title: '12.2 Promise 承诺对象',
+          content: [
+            '`Promise` 是"未来结果的凭证"：pending（进行中）→ fulfilled（成功）/ rejected（失败），状态一旦落地不再变。',
+            '.then(成功回调) 接收结果，.catch(错误回调) 兜住失败，.finally() 无论如何都执行。链式调用取代嵌套回调。',
+            'fetch(url) 返回 Promise：fetch("/api").then(r => r.json()).then(data => ...) 是网络请求的标准姿势。',
+            'Promise.all([p1, p2]) 等全部成功；Promise.race 取最快的一个；Promise.allSettled 等全部结束（不管成败）。',
+          ],
+          code: {
+            lang: 'javascript',
+            caption: 'fetch + Promise 链',
+            source: `fetch("https://api.example.com/users")
+  .then(res => {
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    return res.json();          // 解析 JSON（也是异步）
+  })
+  .then(users => {
+    console.log("拿到", users.length, "个用户");
+  })
+  .catch(err => {
+    console.error("请求失败:", err.message);  // 任何一步出错都会来这里
+  })
+  .finally(() => {
+    hideLoading();              // 收尾总会执行
+  });`,
+          },
+        },
+        {
+          title: '12.3 async / await 语法糖',
+          content: [
+            '`async/await` 让异步代码写成同步的模样：const res = await fetch(url)——等结果但不会卡页面。',
+            'await 只能在 async 函数里用；async 函数的返回值自动包成 Promise。',
+            '错误处理用 try/catch 包住 await，和同步代码一样的写法——比 .catch 链直观。',
+            '并行发起多个请求：先同时发起（不 await），再 Promise.all 一起等——比逐个 await 快得多。',
+          ],
+          code: {
+            lang: 'javascript',
+            caption: 'async/await 标准模板',
+            source: `async function loadUser(id) {
+  try {
+    const res = await fetch(\`/api/users/\${id}\`);
+    if (!res.ok) throw new Error("加载失败");
+    const user = await res.json();
+    render(user);
+  } catch (err) {
+    showError(err.message);
+  }
+}
+
+// 并行加载：两个请求同时飞
+async function loadAll() {
+  const [users, posts] = await Promise.all([
+    fetch("/api/users").then(r => r.json()),
+    fetch("/api/posts").then(r => r.json()),
+  ]);
+  console.log(users, posts);
+}`,
+          },
+        },
+      ],
+      quiz: [
+        {
+          question: 'setTimeout(fn, 0) 为什么不立即执行 fn？',
+          options: ['A. 浏览器 bug', 'B. 回调被放入任务队列，要等当前同步代码全部执行完、事件循环轮到时才执行', 'C. 定时器最小 4ms', 'D. fn 写法错误'],
+          answer: 'B',
+          explanation: '这是理解事件循环的经典考题：异步回调一律排队，同步代码永远优先跑完。',
+        },
+        {
+          question: 'Promise 的三种状态及特点是？',
+          answer: 'pending（进行中）、fulfilled（已成功）、rejected（已失败）；状态一旦从 pending 落定就不可逆转',
+          explanation: '落定（settled）后再调 resolve/reject 无效，这保证了 then/catch 回调的确定性。',
+        },
+        {
+          question: 'await fetch(a); await fetch(b) 比 Promise.all([fetch(a), fetch(b)]) 慢的原因？',
+          answer: '前者串行：b 要等 a 回来才发出；后者两个请求同时发出并行等待，总耗时取最长而非求和',
+          explanation: '无依赖关系的多个请求应先同时发起再统一 await，是异步优化的常见手段。',
+        },
+      ],
+    },
+    {
+      id: 'html-ch13',
+      title: '第 13 章 表单交互与验证实战',
+      intro: '表单是网页与用户交换数据的关口。本章用 JS 接管表单：实时验证、友好错误提示、提交拦截与处理——做出"体验顺滑"的现代表单。',
+      sections: [
+        {
+          title: '13.1 接管表单：submit 事件',
+          content: [
+            '表单默认提交会跳转页面。JS 接管的第一步：监听 submit 事件并 e.preventDefault() 阻止跳转。',
+            '取值：form.elements.namedItem("email").value 或 document.getElementById("email").value。',
+            '`FormData` 一把抓：new FormData(form) 收集所有带 name 的控件值，配合 fetch 直接提交。',
+            '事件委托技巧：监听 form 的 input 事件，e.target 知道是哪个控件在变——一个监听器管全部输入框。',
+          ],
+          code: {
+            lang: 'html',
+            caption: 'JS 接管表单提交',
+            source: `<form id="regForm">
+  <input name="email" type="email" required placeholder="邮箱">
+  <input name="pwd" type="password" required minlength="6" placeholder="密码">
+  <button>注册</button>
+  <p id="msg"></p>
+</form>
+
+<script>
+  document.getElementById("regForm").addEventListener("submit", e => {
+    e.preventDefault();                    // 阻止跳转
+    const data = new FormData(e.target);   // 收集全部字段
+    const email = data.get("email");
+    document.getElementById("msg").textContent = "欢迎，" + email;
+  });
+</script>`,
+          },
+        },
+        {
+          title: '13.2 实时验证与错误提示',
+          content: [
+            '`input` 事件每次键入都触发（边输边验）；`blur` 事件失焦时触发（输完再验）。两者搭配体验最好。',
+            '验证逻辑：正则校验格式（邮箱、手机号）、长度检查、两次密码一致性——自定义规则用 JS，内置规则交给 HTML5 属性。',
+            '错误提示三件套：红色边框（classList.add("error")）、旁边小字说明、聚焦第一个出错项。',
+            'checkValidity() 查询表单/控件是否通过 HTML5 验证；setCustomValidity() 设置自定义错误信息。',
+          ],
+          code: {
+            lang: 'html',
+            caption: '边输入边验证',
+            source: `<input id="phone" placeholder="手机号">
+<span id="phoneErr" class="err"></span>
+
+<script>
+  const phone = document.getElementById("phone");
+  const err = document.getElementById("phoneErr");
+
+  phone.addEventListener("input", () => {
+    const ok = /^1[3-9]\\d{9}$/.test(phone.value);
+    err.textContent = phone.value === "" ? "" :
+                      ok ? "✓ 格式正确" : "手机号格式不对";
+    phone.classList.toggle("error", !ok && phone.value !== "");
+  });
+</script>`,
+          },
+        },
+        {
+          title: '13.3 提交到服务器与本地处理',
+          content: [
+            '纯前端学习项目可以直接本地处理：验证通过后显示成功页或存入 localStorage。',
+            '有后端时：fetch 提交 JSON——method: "POST"、headers 声明 Content-Type、body 用 JSON.stringify。',
+            '防重复提交：提交中禁用按钮（btn.disabled = true）+ 显示"提交中…"，响应回来再恢复。',
+            '安全常识：前端验证只是体验优化，后端必须重新校验——用户完全可以绕过前端直接发请求。',
+          ],
+          code: {
+            lang: 'javascript',
+            caption: '异步提交标准流程',
+            source: `async function submitForm(form) {
+  const btn = form.querySelector("button");
+  btn.disabled = true;
+  btn.textContent = "提交中…";
+  try {
+    const res = await fetch("/api/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(Object.fromEntries(new FormData(form))),
+    });
+    if (!res.ok) throw new Error("服务器错误 " + res.status);
+    showSuccess("注册成功！");
+  } catch (err) {
+    showError(err.message);
+  } finally {
+    btn.disabled = false;          // 无论成败都恢复按钮
+    btn.textContent = "注册";
+  }
+}`,
+          },
+        },
+      ],
+      quiz: [
+        {
+          question: 'JS 接管表单提交的第一步是？',
+          options: ['A. 删除 form 标签', 'B. 监听 submit 事件并 e.preventDefault() 阻止默认跳转', 'C. 给每个 input 加 id', 'D. 把 method 改成 GET'],
+          answer: 'B',
+          explanation: '不阻止默认行为，页面会在提交瞬间跳转/刷新，JS 后续逻辑全部失效。',
+        },
+        {
+          question: 'input 事件与 change 事件的区别是？',
+          answer: 'input 每次键入立即触发（实时）；change 在失焦且值变化时才触发——实时验证用 input',
+          explanation: '做"边输边验"用 input；做"输完再验"用 blur 或 change，两者常搭配使用。',
+        },
+        {
+          question: '为什么有了前端验证，后端还必须再验证一遍？',
+          answer: '前端代码完全运行在用户浏览器里，可被任意绕过（改代码/直接发请求）；只有服务端验证才是安全边界',
+          explanation: '前端验证提升体验（即时反馈），后端验证保证安全与数据正确，二者职责不同、缺一不可。',
+        },
+      ],
+    },
+    {
+      id: 'html-ch14',
+      title: '第 14 章 本地存储与浏览器对象',
+      intro: '关掉网页数据就消失？不一定。本章学习 localStorage 持久化存储、sessionStorage 会话存储，以及 location、history、navigator 等浏览器对象（BOM）的实用技能。',
+      sections: [
+        {
+          title: '14.1 localStorage 持久化',
+          content: [
+            '`localStorage` 是浏览器内置的键值仓库：存进去的数据关浏览器、重启电脑都还在（同域名下共享）。',
+            'API 极简：setItem("k", "v") 存、getItem("k") 取（取不到返回 null）、removeItem 删、clear() 清空。',
+            '只能存字符串！存对象先 JSON.stringify，取出再 JSON.parse——这是最常用的配套操作。',
+            '容量约 5MB，适合存设置、草稿、登录令牌；敏感信息别存（XSS 攻击可读到）。',
+          ],
+          code: {
+            lang: 'javascript',
+            caption: '记住用户的主题选择',
+            source: `// 存对象
+const settings = { theme: "dark", fontSize: 16 };
+localStorage.setItem("settings", JSON.stringify(settings));
+
+// 读对象（带默认值兜底）
+const saved = JSON.parse(localStorage.getItem("settings") || "{}");
+const theme = saved.theme ?? "light";
+document.body.className = theme;
+
+// 页面刷新后设置还在！
+localStorage.removeItem("settings");  // 删除某项`,
+          },
+        },
+        {
+          title: '14.2 sessionStorage 与 Cookie 对比',
+          content: [
+            '`sessionStorage` 用法和 localStorage 一模一样，但只管当前标签页：关标签页就清空，标签页之间不共享。',
+            'Cookie 是老前辈：容量仅 4KB、每次请求自动带给服务器（所以慢）、有过期时间——主要用于登录态标识。',
+            '选型口诀：长期偏好用 localStorage，单次会话用 sessionStorage，要跟服务器打交道用 Cookie。',
+            '三者都按域名隔离（同源策略）：a.com 存的数据 b.com 读不到，这是浏览器的安全基石。',
+          ],
+          code: {
+            lang: 'javascript',
+            caption: '三种存储对比实验',
+            source: `localStorage.setItem("a", "长期");      // 关机也在
+sessionStorage.setItem("b", "本次会话"); // 关标签页就没
+document.cookie = "c=临时; max-age=3600"; // 1 小时过期，随请求发送
+
+console.log(localStorage.getItem("a"));
+console.log(sessionStorage.getItem("b"));
+
+// 同源策略：以下跨域读取会被浏览器拒绝
+// 在 a.com 页面读 b.com 的 localStorage → 报错`,
+          },
+        },
+        {
+          title: '14.3 BOM：location、history 与 navigator',
+          content: [
+            '`location` 掌管地址栏：location.href 读/跳网址、location.reload() 刷新、location.search 拿 ? 后的查询串。',
+            '`history` 管前进后退：history.back() 后退、forward() 前进、pushState() 无刷新改地址（单页应用路由的基石）。',
+            '`navigator` 暴露浏览器信息：userAgent 判断设备、language 语言、onLine 是否联网、clipboard 写剪贴板。',
+            'URLSearchParams 解析查询串：new URLSearchParams(location.search).get("id")，比手写切分稳。',
+          ],
+          code: {
+            lang: 'javascript',
+            caption: 'BOM 常用操作',
+            source: `// 解析当前网址参数 ?id=42&tab=1
+const params = new URLSearchParams(location.search);
+console.log(params.get("id"));   // "42"
+
+// 复制到剪贴板
+navigator.clipboard.writeText("已复制的内容")
+  .then(() => alert("复制成功"));
+
+// 网络状态监听
+window.addEventListener("online",  () => console.log("联网了"));
+window.addEventListener("offline", () => console.log("断网了"));
+
+// SPA 路由基础：改地址不刷新
+history.pushState({}, "", "/page2");`,
+          },
+        },
+      ],
+      quiz: [
+        {
+          question: 'localStorage 存储对象时必须做的两步转换是？',
+          options: ['A. 直接存，自动转', 'B. 存时 JSON.stringify，取时 JSON.parse', 'C. 存时 encodeURIComponent', 'D. 只能存数字'],
+          answer: 'B',
+          explanation: 'localStorage 只接受字符串，直接存对象会得到 "[object Object]"。JSON 序列化是标准配套。',
+        },
+        {
+          question: 'localStorage、sessionStorage、Cookie 的核心区别？',
+          answer: 'localStorage 长期保存不随请求发送；sessionStorage 限当前标签页会话；Cookie 小（4KB）且每次请求自动带给服务器',
+          explanation: '持久偏好用前者、会话内暂存用中间、需要服务器读取（如登录态）用 Cookie。',
+        },
+        {
+          question: 'history.pushState() 的作用是？',
+          answer: '不刷新页面地修改地址栏 URL 并加入历史记录——单页应用（SPA）前端路由的基石',
+          explanation: '配合 popstate 事件监听后退键，实现"页面切换无刷新、前进后退仍可用"。',
+        },
+      ],
+    },
+    {
+      id: 'html-ch15',
+      title: '第 15 章 综合实战：Todo 待办应用',
+      intro: '毕业项目：用 HTML + CSS + JS 三件套做一个功能完整的待办清单——添加、勾选完成、删除、筛选、数据本地持久化。这是前端最著名的入门项目，做完你就是前端开发者了。',
+      sections: [
+        {
+          title: '15.1 数据驱动的界面设计',
+          content: [
+            '核心思想：`数据驱动`——JS 里维护一个 todos 数组（真相之源），界面永远由数据渲染出来，不直接手改 DOM。',
+            '数据结构：{ id: 时间戳, text: "内容", done: false }，每条待办一个对象。',
+            'render() 函数负责"把数据画出来"：任何操作只改数据，然后调 render() 重绘——思路简单、永不错乱。',
+            '这是 React/Vue 等框架的核心思想的原始版，理解了它再学框架事半功倍。',
+          ],
+          code: {
+            lang: 'javascript',
+            caption: '数据与渲染分离',
+            source: `let todos = JSON.parse(localStorage.getItem("todos") || "[]");
+
+function save() {
+  localStorage.setItem("todos", JSON.stringify(todos));
+}
+
+function render() {
+  list.innerHTML = todos.map(t => \`
+    <li class="\${t.done ? "done" : ""}" data-id="\${t.id}">
+      <input type="checkbox" \${t.done ? "checked" : ""}>
+      <span>\${t.text}</span>
+      <button class="del">×</button>
+    </li>\`).join("");
+  counter.textContent = \`还剩 \${todos.filter(t => !t.done).length} 项\`;
+}`,
+          },
+        },
+        {
+          title: '15.2 增删改：事件委托',
+          content: [
+            '添加：回车或点按钮 → 校验非空 → todos.push 新对象 → save + render。',
+            '`事件委托`：动态生成的 li 没法预先绑事件，把监听绑在父级 ul 上，靠 e.target 判断点的是复选框还是删除键。',
+            '勾选完成：找到对应 id 的 todo，t.done = !t.done，重绘——done 类名控制删除线样式。',
+            '删除：todos = todos.filter(t => t.id !== id)——用 filter 生成新数组，一行搞定。',
+          ],
+          code: {
+            lang: 'html',
+            caption: '事件委托处理全部点击',
+            source: `<input id="newTodo" placeholder="回车添加待办">
+<ul id="list"></ul>
+<p id="counter"></p>
+
+<script>
+  newTodo.addEventListener("keydown", e => {
+    if (e.key !== "Enter" || !e.target.value.trim()) return;
+    todos.push({ id: Date.now(), text: e.target.value.trim(), done: false });
+    e.target.value = "";
+    save(); render();
+  });
+
+  list.addEventListener("click", e => {         // 委托到 ul
+    const id = Number(e.target.closest("li")?.dataset.id);
+    if (e.target.type === "checkbox") {
+      const t = todos.find(t => t.id === id);
+      t.done = !t.done;
+    }
+    if (e.target.classList.contains("del")) {
+      todos = todos.filter(t => t.id !== id);
+    }
+    save(); render();
+  });
+  render();
+</script>`,
+          },
+        },
+        {
+          title: '15.3 筛选、样式与完善方向',
+          content: [
+            '筛选三态：全部 / 进行中 / 已完成——不改数据，只在 render 时按 filter 状态过滤后渲染。',
+            '完成态样式：.done span { text-decoration: line-through; opacity: .5 }，配合 transition 有划线动画。',
+            '细节打磨：空列表显示"暂无待办，添加一条吧"；输入框自动聚焦；编辑功能（双击变输入框）。',
+            '升级路线：加截止日期、优先级标签、拖拽排序（HTML5 Drag API）、分类清单——功能任你加，架构不用变。',
+          ],
+          code: {
+            lang: 'css',
+            caption: '配套样式节选',
+            source: `#list li {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  transition: background .2s;
+}
+#list li:hover { background: rgba(6,182,212,.06); }
+
+#list li.done span {
+  text-decoration: line-through;
+  opacity: .45;
+  transition: opacity .3s;
+}
+.del {
+  margin-left: auto;
+  color: #f87171;
+  background: none; border: none;
+  cursor: pointer; font-size: 16px;
+}`,
+          },
+        },
+      ],
+      quiz: [
+        {
+          question: '"数据驱动界面"的含义是？',
+          options: ['A. 直接改 DOM', 'B. 只修改数据（todos 数组），界面由 render() 根据数据统一重绘', 'C. 用数据库存数据', 'D. 界面元素越多越好'],
+          answer: 'B',
+          explanation: '数据是唯一真相源，界面只是数据的投影。操作→改数据→重绘的单向流让逻辑永不失同步。',
+        },
+        {
+          question: '为什么把 click 监听绑在 ul 上而不是每个 li 上？',
+          answer: '事件委托：li 是动态生成的，预先绑不上；绑在父级靠 e.target 识别实际点击目标，一个监听器管所有子项',
+          explanation: '事件冒泡让子元素的点击一路传到 ul；委托还省内存、天然支持新增元素。',
+        },
+        {
+          question: 'todos.filter(t => t.id !== id) 实现了什么操作？',
+          answer: '删除：生成一个"不包含该 id"的新数组，替换旧 todos',
+          explanation: 'filter 不改原数组而返回新数组，正好契合不可变更新思路，是删除列表项的惯用写法。',
+        },
+      ],
+    },
   ],
   patterns: [
     {

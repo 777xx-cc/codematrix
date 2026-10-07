@@ -606,6 +606,737 @@ sort(st.begin(), st.end(),
         },
       ],
     },
+    {
+      id: 'cpp-ch9',
+      title: '第 9 章 内存管理与智能指针',
+      intro: '手动 new/delete 是 C++ 最容易出事的地方。RAII 和智能指针让内存"自动回收"，是现代 C++ 的立身之本。学完本章，告别内存泄漏。',
+      sections: [
+        {
+          title: '9.1 RAII：资源获取即初始化',
+          content: [
+            '`RAII` 是 C++ 最重要的惯用法：把资源（内存、文件、锁）包进对象，构造时获取、析构时释放——离开作用域自动清理，永不遗忘。',
+            'vector、string、fstream 都是 RAII 的实践者：你见过给 vector 手动释放内存吗？没有，因为它的析构函数替你做了。',
+            '栈展开保证：即使中途抛异常，局部对象的析构函数照样执行——这是 RAII 比"记得写 free"可靠的根本原因。',
+            '原则：凡是要"用完记得还"的资源，都应该包进 RAII 对象，而不是依赖程序员的记忆力。',
+          ],
+          code: {
+            lang: 'cpp',
+            caption: 'RAII 思维：文件自动关闭',
+            source: `#include <fstream>
+
+void writeLog() {
+    std::ofstream f("log.txt");  // 构造时打开文件
+    f << "hello";
+    // 函数结束，f 的析构自动关闭文件——无需 f.close()
+    // 即使上面抛异常，文件照样会被关闭
+}
+
+// 对比手动管理：任何一条 return/异常路径都可能漏掉 close`,
+          },
+        },
+        {
+          title: '9.2 unique_ptr 独占指针',
+          content: [
+            '`unique_ptr` 独占一块堆内存：离开作用域自动 delete。一个对象只能被一个 unique_ptr 拥有，不可复制（只能 move 转移）。',
+            '创建用 make_unique<T>(参数)：auto p = make_unique<int>(42)，比 new 更安全更简洁。',
+            '使用和普通指针一样：p->foo()、*p。需要转移所有权时用 std::move(p)，之后 p 变空。',
+            '心法：默认就用 unique_ptr，它零开销（和普通指针一样快），却消灭了 90% 的内存错误。',
+          ],
+          code: {
+            lang: 'cpp',
+            caption: 'unique_ptr 基本用法',
+            source: `#include <memory>
+using namespace std;
+
+{
+    auto p = make_unique<int>(42);
+    cout << *p;              // 42
+
+    // auto q = p;           // 错误！独占指针不能复制
+    auto q = move(p);        // 转移所有权，p 变空
+    cout << (p == nullptr);  // 1
+}   // q 离开作用域，内存自动释放——不需要 delete`,
+          },
+        },
+        {
+          title: '9.3 shared_ptr 与 weak_ptr',
+          content: [
+            '`shared_ptr` 共享所有权：内部维护引用计数，最后一个 shared_ptr 销毁时才释放内存。多个所有者场景使用。',
+            '创建用 make_shared<T>()。use_count() 查看当前有几个所有者。',
+            '循环引用陷阱：A 持 shared_ptr<B>、B 持 shared_ptr<A>，计数永远不归零，双双泄漏——用 weak_ptr 打破环。',
+            '`weak_ptr` 是"弱引用"：不增加计数，用 lock() 临时升级成 shared_ptr 使用，升级失败说明对象已销毁。',
+          ],
+          code: {
+            lang: 'cpp',
+            caption: 'shared_ptr 引用计数',
+            source: `#include <memory>
+using namespace std;
+
+auto a = make_shared<string>("共享数据");
+cout << a.use_count();   // 1
+{
+    auto b = a;          // 共享
+    cout << a.use_count(); // 2
+}                          // b 销毁
+cout << a.use_count();   // 1
+// a 销毁时计数归零，内存自动释放
+
+weak_ptr<string> w = a;
+if (auto s = w.lock()) cout << *s;  // 安全访问`,
+          },
+        },
+      ],
+      quiz: [
+        {
+          question: 'RAII 的核心思想是？',
+          options: ['A. 手动配对 new/delete', 'B. 把资源生命周期绑定到对象生命周期：构造获取、析构释放', 'C. 用垃圾回收器', 'D. 尽量不用堆内存'],
+          answer: 'B',
+          explanation: '析构函数在离开作用域时必定执行（包括异常路径），把释放逻辑写进析构就永远不会漏。',
+        },
+        {
+          question: 'unique_ptr 不能被复制，要转移所有权应该用什么？',
+          answer: 'std::move(p)，转移后原指针变为 nullptr',
+          explanation: '独占语义保证了同一时刻只有一个所有者，编译器在复制尝试时直接报错，把错误挡在编译期。',
+        },
+        {
+          question: 'shared_ptr 循环引用导致内存泄漏，破解方法是？',
+          answer: '把环形引用中的一条边改成 weak_ptr（弱引用，不计数），需要时 lock() 临时升级',
+          explanation: 'weak_ptr 不增加引用计数，环被打破后计数能正常归零释放。',
+        },
+      ],
+    },
+    {
+      id: 'cpp-ch10',
+      title: '第 10 章 模板与泛型编程入门',
+      intro: '为什么 vector 能装 int 也能装 string？因为模板。模板是 C++ 的"代码生成器"：写一份逻辑，编译器为每种类型生成专属版本。本章入门函数模板与类模板。',
+      sections: [
+        {
+          title: '10.1 函数模板',
+          content: [
+            '`函数模板`：template <typename T> 声明一个"类型参数"T，函数里把 T 当类型用。调用时编译器自动推断 T。',
+            'myMax(3, 5) 推断 T=int；myMax(2.5, 3.1) 推断 T=double——一份代码服务所有可比较的类型。',
+            '显式指定也可以：myMax<double>(3, 5.5)。推断歧义（如 myMax(3, 5.5)）会编译报错，要么统一类型要么显式指定。',
+            '模板不是"运行时判断类型"，而是编译期生成多份实例——零运行时开销，但会增大编译产物（代码膨胀）。',
+          ],
+          code: {
+            lang: 'cpp',
+            caption: '函数模板 myMax',
+            source: `template <typename T>
+T myMax(T a, T b) {
+    return a > b ? a : b;
+}
+
+cout << myMax(3, 5);         // 5（T=int）
+cout << myMax(2.5, 3.1);     // 3.1（T=double）
+cout << myMax<string>("ab", "abc"); // abc（显式指定）
+
+// myMax(3, 5.5);  // 编译错误：T 推断冲突`,
+          },
+        },
+        {
+          title: '10.2 类模板',
+          content: [
+            '`类模板`：整个类按类型参数化，vector<int>、map<string, int> 都是类模板的实例化。',
+            '定义：template <typename T> class Box { T data; ... }; 成员函数若写在类外，每个都要带 template 头和 Box<T>:: 前缀。',
+            '实例化时必须给类型：Box<int> b1; Box<string> b2;——这两个是完全不同的类型。',
+            '模板参数可以有默认值和非类型参数：template <typename T, int N> class Array 可实现定长数组（std::array 就是这样）。',
+          ],
+          code: {
+            lang: 'cpp',
+            caption: '手写一个迷你 Box 类模板',
+            source: `template <typename T>
+class Box {
+    T data;
+public:
+    void set(T v) { data = v; }
+    T get() const { return data; }
+};
+
+Box<int> bi;     bi.set(42);
+Box<string> bs;  bs.set("hello");
+cout << bi.get() << " " << bs.get();  // 42 hello
+
+// std::array 的非类型模板参数：
+// array<int, 5> arr;  // 长度 5 写死在类型里`,
+          },
+        },
+        {
+          title: '10.3 模板与 STL 的关系及注意事项',
+          content: [
+            'STL 就是模板的最大实战成果：容器、算法全部模板化，所以才有"一份 sort 排所有类型"。',
+            '模板的错误信息以又臭又长著称：类型不满足操作（比如对没有 < 的类型调 myMax）会在实例化时报错，耐心读第一层错误信息。',
+            '模板代码通常写在头文件里（实现随声明一起），因为编译器实例化时需要看到完整定义——这是模板项目的惯例。',
+            'C++20 的 concepts（requires 子句）可以给模板参数加约束，让报错变得友好，是现代写法。',
+          ],
+          code: {
+            lang: 'cpp',
+            caption: '模板 + STL 的组合拳',
+            source: `#include <vector>
+#include <algorithm>
+
+// 模板函数操作 STL 容器
+template <typename T>
+void printAll(const std::vector<T>& v) {
+    for (const auto& x : v) std::cout << x << " ";
+    std::cout << "\\n";
+}
+
+std::vector<int> vi = {3, 1, 2};
+std::sort(vi.begin(), vi.end());  // sort 也是模板
+printAll(vi);                     // 1 2 3
+printAll(std::vector<string>{"b", "a"}); // b a`,
+          },
+        },
+      ],
+      quiz: [
+        {
+          question: '调用 myMax(3, 5.5)（一个 int 一个 double）会发生什么？',
+          options: ['A. 自动转成 double', 'B. 编译错误：模板参数 T 推断冲突', 'C. 运行时报错', 'D. 返回 5'],
+          answer: 'B',
+          explanation: 'T 被同时推断为 int 和 double，编译器无法抉择。解法：myMax<double>(3, 5.5) 显式指定。',
+        },
+        {
+          question: '模板的代码生成发生在什么阶段？',
+          answer: '编译期：编译器为每种实际使用的类型生成一份实例代码，运行时零额外开销',
+          explanation: '这叫"静态多态"，与虚函数的运行时多态相对；代价是每种类型一份代码带来的体积膨胀。',
+        },
+        {
+          question: '为什么模板的实现通常直接写在头文件里？',
+          answer: '编译器在实例化模板时必须看到完整定义；实现放在 .cpp 里会导致链接期找不到定义',
+          explanation: '模板不是独立编译的代码，而是"生成代码的配方"，所以配方必须随头文件分发给每个使用处。',
+        },
+      ],
+    },
+    {
+      id: 'cpp-ch11',
+      title: '第 11 章 异常处理',
+      intro: '错误处理有两种风格：C 的返回值检查，C++ 的异常。异常让"正常逻辑"和"错误处理"分开写，本章学会 throw、try/catch 的正确姿势与 noexcept 契约。',
+      sections: [
+        {
+          title: '11.1 throw 抛出异常',
+          content: [
+            '`throw` 抛出一个异常对象：throw runtime_error("余额不足")——任何类型都能抛，但标准做法抛 std 异常类。',
+            '抛出后函数立刻中止，沿调用链逐层"栈展开"，直到遇到匹配的 catch 或程序终止。',
+            '标准异常家族（<stdexcept>）：runtime_error 运行时错误、invalid_argument 参数非法、out_of_range 越界、logic_error 逻辑错误。',
+            '构造函数里出错只能抛异常（没有返回值可走）——这是异常不可替代的场景之一。',
+          ],
+          code: {
+            lang: 'cpp',
+            caption: 'throw 与标准异常',
+            source: `#include <stdexcept>
+
+double divide(double a, double b) {
+    if (b == 0) throw std::invalid_argument("除数不能为 0");
+    return a / b;
+}
+
+double withdraw(double balance, double amount) {
+    if (amount > balance)
+        throw std::runtime_error("余额不足");
+    return balance - amount;
+}`,
+          },
+        },
+        {
+          title: '11.2 try-catch 捕获',
+          content: [
+            '`try` 包住可能抛异常的代码，`catch` 按类型捕获：catch (const invalid_argument& e) { e.what() } 取错误信息。',
+            '多个 catch 从上到下匹配，先子类后父类；catch (...) 捕获一切（兜底用）。',
+            '按 const 引用捕获异常对象（const X&），避免拷贝和对象切片。',
+            'catch 后处理不了可以 throw;（裸 throw）原样向上转抛。',
+            '析构函数里绝不能让异常逃出去（栈展开中再抛异常会直接 terminate），析构要 noexcept。',
+          ],
+          code: {
+            lang: 'cpp',
+            caption: '分层捕获的标准写法',
+            source: `try {
+    double r = divide(10, 0);
+    cout << r;                 // 不会执行到这里
+}
+catch (const std::invalid_argument& e) {
+    cerr << "参数错误: " << e.what() << "\\n";
+}
+catch (const std::exception& e) {   // 父类兜底所有标准异常
+    cerr << "异常: " << e.what() << "\\n";
+}
+catch (...) {                        // 最后一道防线
+    cerr << "未知异常\\n";
+}`,
+          },
+        },
+        {
+          title: '11.3 noexcept 与异常安全',
+          content: [
+            '`noexcept` 承诺函数不抛异常：编译器据此优化，move 构造是否 noexcept 甚至影响 vector 扩容策略。',
+            '异常安全三级别：基本保证（出错不泄漏、状态可回滚）、强保证（要么成功要么原样）、不抛保证（noexcept）。',
+            '指南：能用返回值表达的"预期内失败"（如查找不到）不必抛异常；异常留给"异常的、调用方无法继续"的情况。',
+            'main 里兜底 catch 所有异常并打印日志，是程序不"裸崩"的最低修养。',
+          ],
+          code: {
+            lang: 'cpp',
+            caption: 'noexcept 与主函数兜底',
+            source: `void swapInt(int& a, int& b) noexcept {  // 承诺不抛
+    int t = a; a = b; b = t;
+}
+
+int main() {
+    try {
+        // 程序主逻辑
+    } catch (const std::exception& e) {
+        cerr << "程序出错: " << e.what() << "\\n";
+        return 1;
+    }
+    return 0;
+}`,
+          },
+        },
+      ],
+      quiz: [
+        {
+          question: '异常被抛出后、被捕获前，沿调用链逐层退出的过程叫？',
+          options: ['A. 递归', 'B. 栈展开（stack unwinding）', 'C. 内联', 'D. 重载'],
+          answer: 'B',
+          explanation: '栈展开会正常调用每层局部对象的析构函数——这正是 RAII 能与异常完美配合的原因。',
+        },
+        {
+          question: '多个 catch 块的排列顺序应该是？',
+          answer: '先捕获子类、后捕获父类，catch(...) 放最后兜底',
+          explanation: 'catch 按书写顺序匹配，父类在前会把子类异常全部截胡，后面的子类 catch 成了死代码。',
+        },
+        {
+          question: '什么情况适合抛异常而不是返回错误码？',
+          answer: '"异常的、当前层无法处理"的失败，如构造函数失败、资源不可用；预期内的业务结果（如查无此项）用返回值更直观',
+          explanation: '异常适合跨越多个调用层传递的严重错误；滥用异常处理普通流程会让代码难以阅读且变慢。',
+        },
+      ],
+    },
+    {
+      id: 'cpp-ch12',
+      title: '第 12 章 文件 IO 与流进阶',
+      intro: 'cin/cout 只是流世界的入口。本章把流的思想推广到文件和字符串：fstream 读写文件、stringstream 做字符串解析与格式化，一套 API 打天下。',
+      sections: [
+        {
+          title: '12.1 fstream 文件读写',
+          content: [
+            '`ifstream` 读文件、`ofstream` 写文件、`fstream` 读写均可，都在 <fstream> 里。用法和 cin/cout 一模一样——这就是流抽象的魅力。',
+            '打开时检查：if (!f) 或 f.is_open()，文件不存在时静默失败是常见坑。',
+            '写文件默认清空原内容；追加模式用 ofstream f("a.txt", ios::app)。',
+            '流是 RAII 对象，离开作用域自动关闭，一般不需要手动 close()。',
+          ],
+          code: {
+            lang: 'cpp',
+            caption: '文件读写模板',
+            source: `#include <fstream>
+#include <iostream>
+using namespace std;
+
+// 写
+ofstream out("scores.txt");
+out << "张三 90\\n" << "李四 85\\n";   // 与 cout 同款语法
+
+// 读
+ifstream in("scores.txt");
+if (!in) { cerr << "打不开文件\\n"; return 1; }
+string name; int score;
+while (in >> name >> score) {        // 读到末尾自动失败退出
+    cout << name << ": " << score << "\\n";
+}`,
+          },
+        },
+        {
+          title: '12.2 流的状态与按行读取',
+          content: [
+            '流有四个状态位：good、eof（到尾）、fail（格式错）、bad（坏了）。while (in >> x) 就是在检查 fail。',
+            '`getline(in, line)` 按行读整行文本（含空格），配合 stringstream 再做行内解析是标准套路。',
+            '类型不匹配（比如读 int 遇到字母）会让流进入 fail 状态，后续读全部失败；clear() 复位、ignore() 丢弃坏输入。',
+            '二进制文件用 ios::binary 打开 + read()/write() 按字节块读写，文本模式的换行转换会损坏二进制数据。',
+          ],
+          code: {
+            lang: 'cpp',
+            caption: '按行读 + 行内解析',
+            source: `ifstream in("data.csv");
+string line;
+getline(in, line);   // 跳过表头
+
+while (getline(in, line)) {
+    // 每行："张三,90,北京"
+    stringstream ss(line);
+    string name, score, city;
+    getline(ss, name, ',');    // 按逗号切
+    getline(ss, score, ',');
+    getline(ss, city, ',');
+    cout << name << " " << stoi(score) << " " << city << "\\n";
+}`,
+          },
+        },
+        {
+          title: '12.3 stringstream：内存中的流',
+          content: [
+            '`stringstream` 把字符串当流用：sstream >> 从字符串里"读"出各种类型的值，<< 把各种值"写"进字符串。',
+            '解析利器：一行混合文本 "张三 90 1.78"，ss >> name >> score >> height 自动按类型拆分转换。',
+            '格式化利器：拼数字+字符串不用手写转换，ss << "第" << i << "名" 再 ss.str() 取结果。',
+            '重复使用要 ss.clear() 清状态 + ss.str("") 清内容，两个都要清是易错点。',
+          ],
+          code: {
+            lang: 'cpp',
+            caption: 'stringstream 双向用法',
+            source: `#include <sstream>
+
+// 解析：从字符串拆数据
+string text = "弈 18 175.5";
+stringstream ss(text);
+string name; int age; double height;
+ss >> name >> age >> height;     // 自动按类型转换
+
+// 格式化：把数据拼成字符串
+stringstream out;
+out << name << " 今年 " << age << " 岁，身高 " << height << "cm";
+string result = out.str();       // 取出拼接结果`,
+          },
+        },
+      ],
+      quiz: [
+        {
+          question: 'while (in >> x) 循环能自动在文件读完时退出，其原理是？',
+          options: ['A. 编译器特殊处理', 'B. 读取失败（含到文件尾）使流进入 fail 状态，流的布尔转换返回 false', 'C. x 变成 0', 'D. 抛出异常'],
+          answer: 'B',
+          explanation: '流对象在布尔上下文中检查自身状态；到尾或格式错误都会使表达式为假，循环优雅退出。',
+        },
+        {
+          question: '处理 "张三,90,北京" 这种逗号分隔行，标准套路是？',
+          answer: 'getline(in, line) 读整行，再用 stringstream + getline(ss, field, \',\') 按逗号逐段切分',
+          explanation: '两级解析：先按行、再按分隔符，比手工 find 逗号位置稳健得多。',
+        },
+        {
+          question: '复用同一个 stringstream 对象前需要做哪两步清理？',
+          answer: 'ss.clear() 清除状态标志，ss.str("") 清空内容缓冲区',
+          explanation: '只清内容不清状态（或反之）都会导致后续读写诡异失败，这是 stringstream 最著名的坑。',
+        },
+      ],
+    },
+    {
+      id: 'cpp-ch13',
+      title: '第 13 章 Lambda 与现代 C++ 特性',
+      intro: 'C++11 之后的 C++ 被称为"现代 C++"，几乎是一门新语言。本章拿下最常用的四件新武器：Lambda、范围 for、auto 与结构化绑定、移动语义概念。',
+      sections: [
+        {
+          title: '13.1 Lambda 表达式',
+          content: [
+            '`Lambda` 是就地定义的匿名函数：[捕获列表](参数){ 函数体 }，随写随用，不必跑到远处定义。',
+            '捕获列表决定能"看到"哪些外部变量：[] 不捕获、[&] 全引用捕获、[=] 全值捕获、[x, &y] 按需捕获。',
+            '值捕获是"拍照"（定义时复制），引用捕获是"实时监控"（注意别引用到已销毁的变量）。',
+            '配 STL 算法天作之合：sort、for_each、find_if 的第三个参数几乎都用 Lambda 写。',
+          ],
+          code: {
+            lang: 'cpp',
+            caption: 'Lambda 捕获实战',
+            source: `int threshold = 60;
+vector<int> scores = {45, 78, 90, 55};
+
+// 按值捕获 threshold，统计及格人数
+int n = count_if(scores.begin(), scores.end(),
+                 [threshold](int s) { return s >= threshold; });
+
+// 引用捕获 n，就地累加
+for_each(scores.begin(), scores.end(),
+         [&n](int s) { n += s; });
+
+auto cmp = [](int a, int b) { return a > b; };  // 存入变量复用
+sort(scores.begin(), scores.end(), cmp);`,
+          },
+        },
+        {
+          title: '13.2 auto、范围 for 与结构化绑定',
+          content: [
+            '`auto` 让编译器推类型：auto it = v.begin() 免去写又长又臭的迭代器类型名。',
+            '`范围 for`：for (const auto& x : v) 遍历容器——const auto& 是黄金写法：不拷贝、不许改、全类型通吃。',
+            '`结构化绑定`（C++17）：auto [key, value] = pair 直接拆包，遍历 map 时代码清爽一半。',
+            'auto 别滥用：类型一眼看不出时（尤其涉及数值精度）写明类型更安全。',
+          ],
+          code: {
+            lang: 'cpp',
+            caption: '现代遍历三件套',
+            source: `map<string, int> scores = {{"张三", 90}, {"李四", 85}};
+
+// 结构化绑定遍历 map
+for (const auto& [name, score] : scores) {
+    cout << name << ": " << score << "\\n";
+}
+
+vector<int> v = {1, 2, 3};
+for (auto& x : v) x *= 10;   // 引用才能修改原元素
+
+auto it = find(v.begin(), v.end(), 20);  // auto 接迭代器`,
+          },
+        },
+        {
+          title: '13.3 移动语义与右值引用概念',
+          content: [
+            '拷贝是"照抄一份"，移动是"拎包入住"：`移动语义`允许把大对象的内部资源直接"偷"给新对象，避免昂贵拷贝。',
+            '`右值`是临时值（如函数返回值），&& 是右值引用，能绑定到这些"将死之物"上。',
+            'std::move(x) 把 x"标记为可被搬走"——之后 x 处于有效但未指定状态，别再用它的内容。',
+            '好消息：返回值优化（RVO）和 vector/string 的移动构造都是自动的，日常代码"不知不觉就快了"。',
+          ],
+          code: {
+            lang: 'cpp',
+            caption: '移动语义直觉体验',
+            source: `vector<int> makeBig() {
+    vector<int> v(1000000, 42);
+    return v;              // 移动（或 RVO），几乎零成本
+}
+
+vector<int> a = makeBig();   // 不是拷贝一百万个元素！
+
+vector<int> b;
+b = std::move(a);            // a 的内容"搬"给 b
+// 此后 a 为空但仍是合法对象`,
+          },
+        },
+      ],
+      quiz: [
+        {
+          question: 'Lambda 的捕获列表 [&] 与 [=] 的区别是？',
+          options: ['A. 完全相同', 'B. [&] 按引用捕获全部外部变量（可改原值），[=] 按值复制（改的是副本）', 'C. [=] 更快', 'D. [&] 只能捕获一个变量'],
+          answer: 'B',
+          explanation: '引用捕获共享外部变量本体（注意生命周期）；值捕获在 Lambda 定义时拍照，之后外部改动互不影响。',
+        },
+        {
+          question: '遍历容器且要修改元素，范围 for 应写成？',
+          answer: 'for (auto& x : v)——引用绑定到原元素；只读遍历用 for (const auto& x : v)',
+          explanation: '不加 & 时 x 是每个元素的拷贝，改 x 不影响容器；const auto& 避免拷贝且防止误改。',
+        },
+        {
+          question: 'std::move(a) 之后，变量 a 的状态是？',
+          answer: '有效但未指定：通常为空，可以安全析构或重新赋值，但不要读取它的内容',
+          explanation: 'move 只是把资源"搬走"的许可，原对象处于"搬空后的房子"状态，STL 保证它仍可被安全销毁。',
+        },
+      ],
+    },
+    {
+      id: 'cpp-ch14',
+      title: '第 14 章 数据结构实战：栈、队列与链表',
+      intro: '数据结构是算法的舞台。本章用 STL 和手写代码两条路实现三大基础结构：后进先出的栈、先进先出的队列、动态灵活的链表，并理解各自的应用场景。',
+      sections: [
+        {
+          title: '14.1 栈：后进先出',
+          content: [
+            '`栈（Stack）`只在一端进出：push 压入、pop 弹出、top 看栈顶。LIFO——后进先出，像叠盘子。',
+            '典型应用：括号匹配、表达式求值、函数调用栈、撤销操作（Ctrl+Z）、浏览器后退。',
+            'STL 的 std::stack 是容器适配器（默认包在 deque 上）：#include <stack> 后直接 push/pop/top/empty。',
+            '括号匹配经典算法：遇左括号入栈，遇右括号弹栈比对，栈空时遇到右括号或结束时栈不空则不匹配。',
+          ],
+          code: {
+            lang: 'cpp',
+            caption: '用 stack 检查括号匹配',
+            source: `#include <stack>
+
+bool balanced(const string& s) {
+    stack<char> st;
+    for (char c : s) {
+        if (c == '(' || c == '[') st.push(c);
+        else if (c == ')' || c == ']') {
+            if (st.empty()) return false;   // 没有可配的左括号
+            char t = st.top(); st.pop();
+            if ((c == ')' && t != '(') || (c == ']' && t != '['))
+                return false;               // 类型不配
+        }
+    }
+    return st.empty();   // 栈空才算全配上
+}`,
+          },
+        },
+        {
+          title: '14.2 队列：先进先出',
+          content: [
+            '`队列（Queue）`一端进（队尾）一端出（队头）：push/back 看尾、front/pop 从头走。FIFO——像排队买票。',
+            '典型应用：任务调度、消息缓冲、BFS 广度优先搜索、生产者-消费者模型。',
+            'STL 的 std::queue 同样是适配器：push 入队、front 取队头、pop 出队、empty 判空。',
+            '双端队列 deque 两头都能进出，滑动窗口最大值等题目专用；priority_queue 是堆实现的优先队列，队头永远是最大（或最小）值。',
+          ],
+          code: {
+            lang: 'cpp',
+            caption: 'queue 模拟打印任务调度',
+            source: `#include <queue>
+
+queue<string> printer;
+printer.push("文档A");   // 入队
+printer.push("文档B");
+printer.push("文档C");
+
+while (!printer.empty()) {
+    cout << "正在打印: " << printer.front() << "\\n";
+    printer.pop();        // 打印完出队
+}
+// 顺序：A → B → C（先进先出）
+
+priority_queue<int> pq;   // 大顶堆
+pq.push(3); pq.push(9); pq.push(5);
+cout << pq.top();         // 9，最大者优先`,
+          },
+        },
+        {
+          title: '14.3 手写链表',
+          content: [
+            '`链表`每个节点存数据和下一个节点的指针：struct Node { int data; Node* next; }。插入删除 O(1)，随机访问 O(n)。',
+            '头插法建表最简单：新节点指向旧头，再成为新头——几秒一个，但得到的是逆序表。',
+            '删除节点要诀：先找到前驱，prev->next = target->next 跳过目标，再 delete target 释放。',
+            '面试高频：反转链表（三指针 prev/cur/next 接力）、找中点（快慢指针）、判环（快慢指针相遇）。',
+            '工程里直接用 std::list（双向链表）或 forward_list（单向），手写只为理解原理。',
+          ],
+          code: {
+            lang: 'cpp',
+            caption: '手写单链表：头插 + 遍历 + 反转',
+            source: `struct Node {
+    int data;
+    Node* next;
+};
+
+Node* head = nullptr;
+// 头插法：1、2、3 依次插入
+for (int x : {1, 2, 3}) {
+    head = new Node{x, head};
+}
+// 链表：3 -> 2 -> 1
+
+// 反转：三指针接力
+Node *prev = nullptr, *cur = head;
+while (cur) {
+    Node* nxt = cur->next;
+    cur->next = prev;
+    prev = cur;
+    cur = nxt;
+}
+head = prev;   // 链表：1 -> 2 -> 3`,
+          },
+        },
+      ],
+      quiz: [
+        {
+          question: '实现"撤销（Undo）"功能最适合的数据结构是？',
+          options: ['A. 队列', 'B. 栈', 'C. 数组', 'D. 哈希表'],
+          answer: 'B',
+          explanation: '撤销要"最后做的先撤销"，正是栈的后进先出语义。',
+        },
+        {
+          question: 'STL 中 priority_queue 的队头元素是？',
+          answer: '默认是最大值（大顶堆）；传 greater<int> 可变为最小值优先',
+          explanation: 'priority_queue 用堆维护，push/pop 都是 O(log n)，适合"动态取最值"场景。',
+        },
+        {
+          question: '反转单链表需要几个指针？分别做什么？',
+          answer: '三个：prev（已反转部分的头）、cur（当前处理节点）、nxt（暂存后继防止链断）',
+          explanation: '每轮把 cur->next 指向 prev 完成局部反转，然后三个指针整体前移，直到 cur 为空。',
+        },
+      ],
+    },
+    {
+      id: 'cpp-ch15',
+      title: '第 15 章 竞赛与面试常用技巧',
+      intro: '最后一章送上实战锦囊：快读优化让输入不再拖后腿、常用宏与写法让代码减半、调试与对拍方法论、以及竞赛中最常考的知识点清单。',
+      sections: [
+        {
+          title: '15.1 输入输出优化',
+          content: [
+            'cin/cout 默认与 stdio 同步，十万级输入就明显变慢。两行咒语提速：ios::sync_with_stdio(false); cin.tie(nullptr);。',
+            '加上之后不要再混用 scanf/printf 和 cin/cout，同步关掉后混用会出错序。',
+            ' endl 会刷新缓冲区，循环里输出用 "\\n" 代替 endl，又省一大截时间。',
+            '超大数据终极方案：手写快读（getchar 逐字符解析整数），比 cin 快十倍，模板背下来即可。',
+          ],
+          code: {
+            lang: 'cpp',
+            caption: '竞赛标准开头与手写快读',
+            source: `#include <bits/stdc++.h>
+using namespace std;
+
+// 手写快读：读整数比 cin 快一个量级
+inline int read() {
+    int x = 0, f = 1; char c = getchar();
+    while (c < '0' || c > '9') { if (c == '-') f = -1; c = getchar(); }
+    while (c >= '0' && c <= '9') { x = x * 10 + c - '0'; c = getchar(); }
+    return x * f;
+}
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+    int n = read();
+    cout << n << "\\n";   // 用 \\n 不用 endl
+}`,
+          },
+        },
+        {
+          title: '15.2 常用宏、别名与代码模板',
+          content: [
+            '#include <bits/stdc++.h> 一个头文件包含全部标准库，竞赛标配（工程里别用，编译慢）。',
+            '常用别名：using ll = long long; using pii = pair<int,int>; 显著缩短代码。',
+            '宏：#define INF 0x3f3f3f3f（无穷大且相加不溢出）、#define rep(i,n) for(int i=0;i<(n);i++)。',
+            'memset 初始化：memset(dp, 0x3f, sizeof dp) 把数组设成 INF——0x3f 的妙处是每个字节相同才能用 memset。',
+          ],
+          code: {
+            lang: 'cpp',
+            caption: '竞赛模板起手式',
+            source: `#include <bits/stdc++.h>
+using namespace std;
+using ll = long long;
+using pii = pair<int, int>;
+const int INF = 0x3f3f3f3f;
+
+int main() {
+    vector<pii> v = {{2, 100}, {1, 50}};
+    sort(v.begin(), v.end());  // pair 默认按 first 再 second 排
+    // (1,50) (2,100)
+
+    int dp[100];
+    memset(dp, 0x3f, sizeof dp);  // 全部初始化为 INF
+}`,
+          },
+        },
+        {
+          title: '15.3 调试、对拍与高频考点',
+          content: [
+            '本地调试：freopen("in.txt", "r", stdin) 把文件当标准输入，提交前删掉或注释。',
+            '`对拍`：写个"笨但绝对正确"的暴力程序，再写随机数据生成器，让两个程序对几十万组数据比对输出——找反例的神器。',
+            '高频考点清单：模拟、二分答案、前缀和与差分、双指针、DFS/BFS、动态规划、并查集、最短路。',
+            '估复杂度：一般评测机每秒约 1e8 次运算。n≤20 想状压/暴搜，n≤5000 想 O(n²)，n≤1e5 想 O(n log n)，n≤1e6 必须 O(n)。',
+          ],
+          code: {
+            lang: 'cpp',
+            caption: '文件输入 + 复杂度速查',
+            source: `int main() {
+#ifndef ONLINE_JUDGE
+    freopen("in.txt", "r", stdin);   // 本地从文件读
+#endif
+    // ... 正常写 cin/scanf
+}
+
+/* 数据范围 → 算法选型
+n ≤ 20    : O(2^n) 状压/子集枚举
+n ≤ 500   : O(n^3)  Floyd 等
+n ≤ 5000  : O(n^2)  基础 DP
+n ≤ 1e5   : O(n log n)  排序/二分/堆
+n ≤ 1e6+  : O(n) 或 O(n log n) 卡常 */`,
+          },
+        },
+      ],
+      quiz: [
+        {
+          question: 'ios::sync_with_stdio(false) 之后要注意什么？',
+          options: ['A. 必须用 printf', 'B. 不能再混用 cin/cout 与 scanf/printf', 'C. 必须开新线程', 'D. 不能再用 vector'],
+          answer: 'B',
+          explanation: '关闭同步后两套 IO 各自缓冲，混用会导致输出顺序错乱。要么全 cin/cout，要么全 scanf/printf。',
+        },
+        {
+          question: 'memset(dp, 0x3f, sizeof dp) 为什么能把 int 数组设成"无穷大"？',
+          answer: 'memset 按字节填充，0x3f3f3f3f 四个字节恰好都是 0x3f；这个值约 1e9 且两数相加不溢出 int',
+          explanation: '只有四字节相同的值才能用 memset 按字节填充；0x3f3f3f3f 是竞赛约定的 INF。',
+        },
+        {
+          question: '"对拍"指的是什么调试方法？',
+          answer: '用随机数据同时喂给"正解程序"和"暴力程序"，比对输出是否一致，快速找到让正解出错的数据',
+          explanation: '暴力程序慢但易写对，是验证高效算法的黄金参照物；配上数据生成器可自动化跑上万组。',
+        },
+      ],
+    },
   ],
   patterns: [
     {

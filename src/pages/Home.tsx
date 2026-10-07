@@ -11,10 +11,10 @@ const features = [
 
 const stats = [
   { num: '5', label: '编程语言' },
-  { num: '42', label: '教程章节' },
+  { num: '75', label: '教程章节' },
   { num: '34', label: '题型剖析' },
   { num: '120', label: '精选习题' },
-  { num: '530+', label: '名词批注' },
+  { num: '830+', label: '名词批注' },
 ]
 
 export default function HomePage() {

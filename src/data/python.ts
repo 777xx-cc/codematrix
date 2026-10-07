@@ -653,6 +653,750 @@ print(dict(groups))  # {'a': ['apple', ...], 'b': [...], 'o': [...]}`,
         },
       ],
     },
+    {
+      id: 'py-ch9',
+      title: '第 9 章 迭代器与生成器',
+      intro: '为什么 for 能遍历列表、文件甚至无穷数列？背后是迭代器协议；而生成器让你用 yield 轻松制造"用多少算多少"的惰性序列，是处理大数据的利器。',
+      sections: [
+        {
+          title: '9.1 迭代器协议',
+          content: [
+            '`可迭代对象`（Iterable）：能被 for 遍历的东西——列表、字符串、字典、range、文件。它们都实现了 __iter__() 方法。',
+            '`迭代器`（Iterator）：iter() 把可迭代对象变成迭代器，next() 每次取一个元素，取完抛 StopIteration 异常——for 循环内部就是这么干的。',
+            '关键区别：列表把所有元素存在内存里；迭代器"现用现算"，不存全部数据。',
+            'iter 工具函数：map、filter、zip、enumerate 返回的都是迭代器，只能完整遍历一次，想看内容先 list() 化。',
+          ],
+          code: {
+            lang: 'python',
+            caption: '手动模拟 for 循环',
+            source: `lst = [10, 20, 30]
+it = iter(lst)        # 得到迭代器
+
+print(next(it))  # 10
+print(next(it))  # 20
+print(next(it))  # 30
+# print(next(it))  # StopIteration！
+
+# for x in lst 的底层就是 iter + 循环 next + 捕获 StopIteration`,
+          },
+        },
+        {
+          title: '9.2 生成器函数与 yield',
+          content: [
+            '`生成器`是特殊的迭代器：函数里有 `yield` 关键字，调用它不执行，而是返回一个生成器对象。',
+            '每次 next() 执行到下一个 yield 暂停并交出值，下次从暂停处继续——像游戏的"存档点"。',
+            '惰性求值的价值：def fib() 可以生成无限斐波那契数列而不会撑爆内存，因为算一个才有一个。',
+            '生成器表达式是列表推导式的惰性版：(x*x for x in range(10**9)) 只占常数内存，把 [] 换成 () 即可。',
+          ],
+          code: {
+            lang: 'python',
+            caption: 'yield 实现无限斐波那契',
+            source: `def fib():
+    a, b = 0, 1
+    while True:
+        yield a        # 交出一个值并暂停
+        a, b = b, a + b
+
+g = fib()
+print([next(g) for _ in range(10)])
+# [0, 1, 1, 2, 3, 5, 8, 13, 21, 34]
+
+# 生成器表达式：处理大文件不撑内存
+total = sum(len(line) for line in open("big.txt"))`,
+          },
+        },
+        {
+          title: '9.3 什么时候用生成器',
+          content: [
+            '读大文件：for line in open(...) 本身就是生成器式的逐行读，百 G 日志也稳。',
+            '数据管道：多个生成器首尾相接，读 → 过滤 → 转换 → 汇总，每步都不落盘、不驻留内存。',
+            '无限序列：分页抓取、实时数据流，"边产生边消费"。',
+            '反面教材：数据量小、要反复遍历、要按下标访问——这些场景请老老实实列表。',
+          ],
+          code: {
+            lang: 'python',
+            caption: '生成器管道：统计大日志中的 ERROR 行数',
+            source: `def read_lines(path):
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            yield line.strip()
+
+def only_errors(lines):
+    for line in lines:
+        if "ERROR" in line:
+            yield line
+
+# 管道接通，逐行流过，内存占用恒定
+errors = only_errors(read_lines("app.log"))
+print(sum(1 for _ in errors))`,
+          },
+        },
+      ],
+      quiz: [
+        {
+          question: '函数中出现 yield 关键字后，调用该函数会立即执行函数体吗？',
+          options: ['A. 会，和普通函数一样', 'B. 不会，返回一个生成器对象，next() 时才执行到 yield', 'C. 只执行到第一个 yield 前', 'D. 报错'],
+          answer: 'B',
+          explanation: '含 yield 的函数是生成器函数：调用只创建生成器，真正的代码在每次 next() 时推进到下一个 yield。',
+        },
+        {
+          question: '(x*x for x in range(10**9)) 与 [x*x for x in range(10**9)] 的本质区别是？',
+          answer: '前者是生成器（惰性，常数内存，随用随算）；后者是列表（立即算完 10 亿个数并全部存进内存）',
+          explanation: '大数据或一次性遍历场景用生成器；需要下标访问或反复遍历时用列表。',
+        },
+        {
+          question: 'for 循环遍历到末尾时，底层通过什么信号结束循环？',
+          answer: '迭代器的 next() 抛出 StopIteration 异常，for 捕获后正常退出',
+          explanation: '这正是迭代器协议：__iter__() 拿迭代器、next() 取值、StopIteration 表示结束。',
+        },
+      ],
+    },
+    {
+      id: 'py-ch10',
+      title: '第 10 章 装饰器',
+      intro: '装饰器是 Python 最优雅的语法之一：不改原函数代码，就能给它加上计时、日志、权限检查等能力。理解了它，就读得懂 Flask、pytest 等框架的核心。',
+      sections: [
+        {
+          title: '10.1 函数是一等公民',
+          content: [
+            'Python 中函数是"一等公民"：可以赋值给变量、当参数传递、当返回值返回——这是装饰器的前提。',
+            '函数名不带括号是"函数对象本身"，带括号才是"调用它"。f = print 之后 f("hi") 等价 print("hi")。',
+            '嵌套函数 + 返回函数 = 闭包：内层函数记住了外层作用域的变量。',
+            '所以"把旧函数包装成新函数"完全可行：def wrapper(*args): 做点别的; return old_fn(*args)。',
+          ],
+          code: {
+            lang: 'python',
+            caption: '函数可以像数据一样传来传去',
+            source: `def hello(name):
+    return f"你好，{name}"
+
+f = hello          # 函数赋值给变量
+print(f("弈"))      # 你好，弈
+
+def apply(func, value):   # 函数当参数
+    return func(value)
+
+print(apply(len, "code"))  # 4
+print(apply(str.upper, "code"))  # CODE`,
+          },
+        },
+        {
+          title: '10.2 手写一个装饰器',
+          content: [
+            '`装饰器`就是一个"接收函数、返回新函数"的函数。计时装饰器是入门标配：包一层，前后各取一次时间。',
+            '@timer 写在函数定义上方，等价于 say = timer(say)——这就是装饰器的全部魔法，只是语法糖。',
+            '包装函数用 *args, **kwargs 接住任意参数，才能装饰任何签名的函数。',
+            'functools.wraps 把原函数的名字、文档复制到包装函数上，写装饰器必带，否则函数元信息会丢。',
+          ],
+          code: {
+            lang: 'python',
+            caption: '一个能用的计时装饰器',
+            source: `import time
+from functools import wraps
+
+def timer(func):
+    @wraps(func)   # 保留原函数名与文档
+    def wrapper(*args, **kwargs):
+        start = time.time()
+        result = func(*args, **kwargs)   # 调原函数
+        print(f"{func.__name__} 耗时 {time.time()-start:.3f}s")
+        return result
+    return wrapper
+
+@timer            # 等价于 work = timer(work)
+def work():
+    time.sleep(1)
+
+work()  # 输出：work 耗时 1.002s`,
+          },
+        },
+        {
+          title: '10.3 带参数的装饰器与典型用途',
+          content: [
+            '带参数的装饰器要再套一层：@repeat(3) 实际是 repeat(3) 先返回装饰器，再装饰函数——三层嵌套函数。',
+            '典型用途：日志记录、权限校验、结果缓存（functools.lru_cache）、单元测试标记、Web 框架的路由注册。',
+            'Flask 的 @app.route("/") 就是带参装饰器：把 URL 和处理函数绑定注册。',
+            '多个装饰器从下往上贴：@a @b def f() 等价 f = a(b(f))，离函数最近的先包。',
+          ],
+          code: {
+            lang: 'python',
+            caption: '带参数的装饰器与缓存',
+            source: `from functools import lru_cache
+
+def repeat(n):                    # 第一层：收装饰器参数
+    def decorator(func):          # 第二层：收函数
+        def wrapper(*a, **kw):    # 第三层：收调用参数
+            for _ in range(n):
+                func(*a, **kw)
+        return wrapper
+    return decorator
+
+@repeat(3)
+def hi(): print("嗨")
+hi()  # 嗨 嗨 嗨
+
+@lru_cache(maxsize=None)   # 自带缓存装饰器
+def fib(n):
+    return n if n < 2 else fib(n-1) + fib(n-2)
+print(fib(100))  # 瞬间完成（缓存避免重复计算）`,
+          },
+        },
+      ],
+      quiz: [
+        {
+          question: '@timer 写在函数定义上方，等价于什么？',
+          options: ['A. timer() 函数被删除', 'B. work = timer(work)，即用装饰结果替换原函数名', 'C. 每次调用时临时计时', 'D. 给函数加注释'],
+          answer: 'B',
+          explanation: '@ 只是语法糖：函数定义完成后立刻把它传给装饰器，并用返回的新函数替换原名字绑定。',
+        },
+        {
+          question: '装饰器的包装函数为什么写成 def wrapper(*args, **kwargs)？',
+          answer: '为了接住任意位置参数和关键字参数，使装饰器能包装任何签名的函数',
+          explanation: '这是通用装饰器的标准写法，参数原样透传给原函数，装饰器本身不关心具体参数。',
+        },
+        {
+          question: 'functools.wraps 的作用是？',
+          answer: '把原函数的 __name__、__doc__ 等元信息复制到包装函数上，避免装饰后函数"改名"',
+          explanation: '不加 wraps，被装饰函数的 func.__name__ 会变成 "wrapper"，调试和文档都会混乱。',
+        },
+      ],
+    },
+    {
+      id: 'py-ch11',
+      title: '第 11 章 正则表达式',
+      intro: 're 模块是 Python 处理文本的瑞士军刀：校验格式、批量提取、智能替换，一行正则顶三十行字符串判断。本章从语法到实战一次通关。',
+      sections: [
+        {
+          title: '11.1 正则语法核心',
+          content: [
+            '字符类：\\d 数字、\\w 字母数字下划线、\\s 空白、. 任意字符；[abc] 三选一、[a-z] 范围、[^0-9] 取反。',
+            '量词：* 零或多、+ 一或多、? 零或一、{n} 正好 n 个、{n,} 至少 n、{n,m} 区间。默认贪婪，加 ? 变懒惰（如 .*?）。',
+            '锚点与分组：^ 开头、$ 结尾、\\b 单词边界；() 分组可捕获，| 表示或。',
+            'Python 里写正则推荐原始字符串 r"\\d+"，前面的 r 让反斜杠不用双写，清爽又不易错。',
+          ],
+          code: {
+            lang: 'python',
+            caption: '常见模式速查',
+            source: `import re
+
+phone = r"1[3-9]\\d{9}"          # 手机号
+email = r"[\\w.]+@[\\w.]+\\.\\w+" # 邮箱
+chinese = r"[\\u4e00-\\u9fa5]+"   # 中文
+number = r"-?\\d+\\.?\\d*"         # 整数或小数
+
+print(re.fullmatch(phone, "13812345678"))  # 匹配成功返回对象`,
+          },
+        },
+        {
+          title: '11.2 re 模块四大函数',
+          content: [
+            '`re.match` 从字符串开头匹配（只能验开头）；`re.search` 全文找第一个匹配；`re.fullmatch` 要求整串完全符合——校验用 fullmatch 最严格。',
+            '`re.findall` 返回所有匹配的列表，提取场景一把梭：re.findall(r"\\d+", text) 抓出所有数字。',
+            '`re.sub` 正则替换：re.sub(r"\\d+", "*", "电话138") 把数字打码；替换串里 \\1 引用捕获组。',
+            '匹配对象的方法：m.group() 整个匹配、m.group(1) 第一组、m.start()/.end() 位置、m.span() 区间。',
+          ],
+          code: {
+            lang: 'python',
+            caption: '四大函数实战',
+            source: `import re
+
+log = "订单A102金额88元，订单B205金额120元"
+
+print(re.search(r"\\d+", log).group())   # 102（第一个数字）
+print(re.findall(r"[A-Z]\\d+", log))     # ['A102', 'B205']
+print(re.findall(r"(\\w+)金额(\\d+)元", log))
+# [('订单A102', '88'), ('订单B205', '120')]
+
+print(re.sub(r"\\d+元", "**元", log))    # 金额打码`,
+          },
+        },
+        {
+          title: '11.3 编译复用与常见坑',
+          content: [
+            '同一模式反复用时 re.compile 预编译：p = re.compile(r"\\d+")，之后 p.findall(s)，循环里省时明显。',
+            '贪婪陷阱："<a>x</a><b>y</b>" 用 <.+> 会一口气匹配到最后一对标签；改 <.+?> 懒惰匹配才是一对一对的。',
+            '匹配换行：默认 . 不匹配 \\n，加 re.S 标志（re.DOTALL）后才匹配。',
+            'raw 字符串里也别忘记：正则引擎和 Python 字符串各转义一次，所以永远用 r"..." 前缀最省心。',
+          ],
+          code: {
+            lang: 'python',
+            caption: '预编译与懒惰匹配',
+            source: `import re
+
+html = "<p>第一段</p><p>第二段</p>"
+
+print(re.findall(r"<p>.+</p>", html))   # ['<p>第一段</p><p>第二段</p>'] 贪婪！
+print(re.findall(r"<p>.+?</p>", html))  # ['<p>第一段</p>', '<p>第二段</p>']
+
+pattern = re.compile(r"ERROR: (.+)")    # 预编译
+for line in open("app.log", encoding="utf-8"):
+    m = pattern.search(line)
+    if m: print(m.group(1))             # 只打印错误内容`,
+          },
+        },
+      ],
+      quiz: [
+        {
+          question: 're.match 与 re.search 的区别是？',
+          options: ['A. 完全一样', 'B. match 只从字符串开头匹配，search 在全文中查找第一个匹配', 'C. match 更快', 'D. search 只匹配一次'],
+          answer: 'B',
+          explanation: '"hello123" 用 match(r"\\d+") 找不到（开头不是数字），search 能找到 123。',
+        },
+        {
+          question: '正则 <.+> 匹配 "<a>x</a><b>y</b>" 会吞掉整串，修正办法是？',
+          answer: '改为懒惰匹配 <.+?>，量词后加 ? 表示"能少匹配就少匹配"',
+          explanation: '贪婪（默认）尽量多吃，懒惰尽量少碰。提取成对标签场景必须用懒惰模式。',
+        },
+        {
+          question: 'Python 中写正则表达式为什么推荐 r"\\d+" 而不是 "\\d+"？',
+          answer: 'r 前缀是原始字符串，反斜杠不被 Python 转义，避免和正则自身的转义冲突（普通字符串里 \\d 写法易错，\\b 会变退格符）',
+          explanation: '例如 "\\b" 在普通字符串里是退格字符，正则想要单词边界必须写 r"\\b" 或 "\\\\b"——统一用 r 前缀最安全。',
+        },
+      ],
+    },
+    {
+      id: 'py-ch12',
+      title: '第 12 章 网络爬虫入门',
+      intro: '爬虫 = 模拟浏览器请求网页 + 从 HTML 里提取数据。本章学会 requests 发请求、BeautifulSoup 解析页面，以及必须知道的合规常识。',
+      sections: [
+        {
+          title: '12.1 requests 发送请求',
+          content: [
+            '`HTTP 请求`是与网站对话的方式：GET 取数据（浏览器输网址就是 GET），POST 提交数据（登录、发表单）。',
+            'requests 是 Python 最流行的 HTTP 库（pip install requests）：r = requests.get(url)，r.text 拿网页源码，r.status_code 看状态码。',
+            '状态码速记：200 成功、301/302 跳转、403 被拒绝、404 不存在、500 服务器出错。',
+            'headers 里带上 User-Agent 伪装成浏览器，很多网站才肯给你完整内容；timeout=10 防止程序卡死。',
+          ],
+          code: {
+            lang: 'python',
+            caption: '最简爬虫骨架',
+            source: `import requests
+
+headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+r = requests.get("https://example.com", headers=headers, timeout=10)
+
+print(r.status_code)   # 200 表示成功
+print(r.encoding)      # 自动识别的编码
+r.encoding = "utf-8"   # 乱码就手动指定
+print(r.text[:200])    # 网页源码前 200 字符
+
+# JSON 接口更方便：data = requests.get(api_url).json()`,
+          },
+        },
+        {
+          title: '12.2 BeautifulSoup 解析 HTML',
+          content: [
+            '网页源码是一大串 HTML，`BeautifulSoup`（pip install beautifulsoup4）把它解析成可以查询的节点树。',
+            '创建：soup = BeautifulSoup(html, "html.parser")。查找：soup.find("h1") 找第一个、soup.find_all("a") 找全部、soup.select(".item") 用 CSS 选择器。',
+            '取内容：tag.text 纯文本、tag.get("href") 取属性、tag["class"] 也行。',
+            '定位技巧：先在浏览器 F12 里右键元素"检查"，看清它的标签、class、层级，再写选择器——爬虫的八成工作在分析页面。',
+          ],
+          code: {
+            lang: 'python',
+            caption: '提取页面中所有文章标题和链接',
+            source: `from bs4 import BeautifulSoup
+
+html = """<div class="post">
+  <a href="/p/1"><h2>第一篇</h2></a></div>
+<div class="post"><a href="/p/2"><h2>第二篇</h2></a></div>"""
+
+soup = BeautifulSoup(html, "html.parser")
+for a in soup.select(".post a"):
+    print(a.text.strip(), "->", a["href"])
+# 第一篇 -> /p/1
+# 第二篇 -> /p/2`,
+          },
+        },
+        {
+          title: '12.3 合规与反爬常识',
+          content: [
+            '`robots.txt` 是网站的"爬虫告示牌"（域名后加 /robots.txt 可看），写明哪些路径不欢迎抓取，请尊重它。',
+            '频率控制：time.sleep(1) 给每次请求间隔，别把人家服务器压垮——高并发抓取可能构成攻击。',
+            '版权与法律：公开数据可学习性抓取，但个人信息、付费内容、明确禁止的内容不要碰；商用前务必确认授权。',
+            '反爬信号：返回 403、要求验证码、数据在 JS 里动态加载（requests 拿不到）——后者要用 Selenium 或找数据接口。',
+          ],
+          code: {
+            lang: 'python',
+            caption: '礼貌爬虫三件套',
+            source: `import requests, time
+
+urls = ["https://example.com/a", "https://example.com/b"]
+for url in urls:
+    try:
+        r = requests.get(url, headers={"User-Agent": "MyStudyBot/1.0"}, timeout=10)
+        if r.status_code == 200:
+            print(url, "OK", len(r.text), "字节")
+        else:
+            print(url, "被拒绝", r.status_code)
+    except requests.RequestException as e:
+        print(url, "出错", e)
+    time.sleep(1)   # 间隔 1 秒，文明抓取`,
+          },
+        },
+      ],
+      quiz: [
+        {
+          question: 'requests.get(url) 返回 403 状态码意味着？',
+          options: ['A. 网页不存在', 'B. 服务器拒绝访问（可能被识别为爬虫）', 'C. 网络断开', 'D. 请求成功'],
+          answer: 'B',
+          explanation: '403 Forbidden 表示服务器拒绝。常见原因是缺少 User-Agent 或访问过快触发反爬。',
+        },
+        {
+          question: 'BeautifulSoup 中 soup.select(".post a") 的选择器含义是？',
+          answer: '选中所有 class 含 post 的元素内部的 <a> 标签（后代选择器）',
+          explanation: 'CSS 选择器语法：. 表示 class，空格表示后代关系，与浏览器里的规则一致。',
+        },
+        {
+          question: '页面数据由 JavaScript 动态加载时，requests 直接 get 为什么拿不到数据？',
+          answer: 'requests 只下载原始 HTML，不执行 JS；动态数据在 JS 运行后才出现，需改用 Selenium 或直接请求数据接口',
+          explanation: '判断方法：浏览器"查看网页源代码"里搜不到目标数据，而在 F12 的 Elements 里能看到，即为动态渲染。',
+        },
+      ],
+    },
+    {
+      id: 'py-ch13',
+      title: '第 13 章 面向对象进阶',
+      intro: '上一阶段学会了定义类和对象，本章进阶：继承复用代码、类方法与静态方法的分工、@property 优雅地管理属性、以及 Python 特有的鸭子类型哲学。',
+      sections: [
+        {
+          title: '13.1 继承与 super()',
+          content: [
+            '`继承`：class Dog(Animal) 让 Dog 自动拥有 Animal 的属性和方法，只写自己新增或修改的部分。',
+            '子类重写父类方法后，用 `super()` 还能调用父类版本：super().__init__(name) 是子类构造方法里的标配。',
+            '方法解析顺序 MRO：Python 支持多继承，class C(A, B) 中同名方法按从左到右的深度优先规则查找，C.__mro__ 可查。',
+            'isinstance(d, Animal) 判断对象是不是某类（含子类）的实例；issubclass(Dog, Animal) 判断类之间的继承关系。',
+          ],
+          code: {
+            lang: 'python',
+            caption: '继承与 super',
+            source: `class Animal:
+    def __init__(self, name):
+        self.name = name
+    def speak(self):
+        return "..."
+
+class Dog(Animal):
+    def __init__(self, name, breed):
+        super().__init__(name)   # 父类部分交给父类初始化
+        self.breed = breed
+    def speak(self):             # 重写
+        return "汪汪"
+
+d = Dog("旺财", "金毛")
+print(d.name, d.speak())              # 旺财 汪汪
+print(isinstance(d, Animal))          # True`,
+          },
+        },
+        {
+          title: '13.2 类方法、静态方法与 @property',
+          content: [
+            '`实例方法`第一个参数是 self（操作某个对象）；`@classmethod` 第一个参数是 cls（操作类本身），常用于"另一种构造方式"。',
+            '`@staticmethod` 没有 self/cls，就是个挂在类里的普通函数，用来组织与类相关的工具方法。',
+            '`@property` 把方法伪装成属性：p.area 而不是 p.area()，还能在读取/赋值时加校验逻辑。',
+            'setter 写法：@area.setter 定义赋值逻辑，p.area = -5 时可以在里面拒绝非法值。',
+          ],
+          code: {
+            lang: 'python',
+            caption: '三种方法与属性装饰器',
+            source: `class Circle:
+    pi = 3.14159
+    def __init__(self, r): self.r = r
+
+    @classmethod
+    def from_diameter(cls, d):     # 备用构造器
+        return cls(d / 2)
+
+    @staticmethod
+    def is_valid(r): return r > 0  # 工具函数
+
+    @property
+    def area(self):                # 像属性一样访问
+        return Circle.pi * self.r ** 2
+
+c = Circle.from_diameter(10)
+print(c.area)        # 78.5397，注意没有括号`,
+          },
+        },
+        {
+          title: '13.3 鸭子类型与抽象',
+          content: [
+            '`鸭子类型`：Python 不看继承看行为——"走像鸭子、叫像鸭子，就是鸭子"。任何有 speak() 的对象都能放进需要 speak 的地方。',
+            '这意味着 Python 很少强制接口：只要对象提供了需要的方法即可，比 Java 灵活但也更依赖文档与约定。',
+            '需要正式约束时用 abc 模块的抽象基类：@abstractmethod 标记的方法子类必须实现，否则不能实例化。',
+            '混合使用：简单场景鸭子类型，框架级代码用抽象基类划清契约。',
+          ],
+          code: {
+            lang: 'python',
+            caption: '鸭子类型与抽象基类',
+            source: `from abc import ABC, abstractmethod
+
+# 鸭子类型：不用继承同一个父类
+class Duck:  def speak(self): return "嘎"
+class Radio: def speak(self): return "FM96.8"
+
+def make_it_speak(x): print(x.speak())  # 只要有 speak 就行
+make_it_speak(Duck())
+make_it_speak(Radio())
+
+# 抽象基类：强制契约
+class Shape(ABC):
+    @abstractmethod
+    def area(self): ...
+
+class Square(Shape):
+    def __init__(self, a): self.a = a
+    def area(self): return self.a ** 2
+
+# Shape() 会报错；Square 不实现 area 也会报错`,
+          },
+        },
+      ],
+      quiz: [
+        {
+          question: '子类的 __init__ 中调用 super().__init__(name) 的目的是？',
+          answer: '把父类负责的初始化工作交给父类完成，子类只初始化自己新增的部分',
+          explanation: '避免重复代码，也保证父类定义的字段（如 self.name）被正确建立。',
+        },
+        {
+          question: '被 @property 装饰的方法，调用时的写法特点是？',
+          options: ['A. 必须带括号 c.area()', 'B. 像访问属性一样 c.area，不加括号', 'C. 只能通过类名调用', 'D. 不能返回值'],
+          answer: 'B',
+          explanation: '@property 把方法伪装成属性，外部用 c.area 访问；配合 @area.setter 还能拦截赋值做校验。',
+        },
+        {
+          question: 'Python 的"鸭子类型"指的是？',
+          answer: '不检查对象的类或继承关系，只关心它是否提供了所需的方法（行为）',
+          explanation: '"走像鸭子、叫像鸭子就是鸭子"——有 speak() 的对象都能传给需要 speak 的函数，与继承无关。',
+        },
+      ],
+    },
+    {
+      id: 'py-ch14',
+      title: '第 14 章 测试与调试',
+      intro: '代码能跑 ≠ 代码正确。本章学会用 assert 快速验证、用 unittest 写正式测试、用 pdb 和日志高效调试——这些习惯会让你的代码质量脱胎换骨。',
+      sections: [
+        {
+          title: '14.1 assert 断言与防御式编程',
+          content: [
+            '`assert 条件` 是最轻量的自检：条件不成立立刻抛 AssertionError 并停下，把 bug 暴露在离源头最近的地方。',
+            '适合检查"绝不应该发生"的情况：函数入口参数合法性、计算中间结果的范围。',
+            'assert 可以带提示信息：assert age >= 0, f"年龄不能为负: {age}"，出错时信息随异常打印。',
+            '注意：python -O 优化模式下所有 assert 会被移除，所以别用它做正式的数据校验（用 if + raise）。',
+          ],
+          code: {
+            lang: 'python',
+            caption: 'assert 快速自检',
+            source: `def average(scores):
+    assert len(scores) > 0, "成绩列表不能为空"
+    return sum(scores) / len(scores)
+
+print(average([80, 90]))   # 85.0
+# average([])  # AssertionError: 成绩列表不能为空
+
+# 验证计算中间结果
+price = 99.9
+discount = 0.8
+final = price * discount
+assert 0 < final <= price   # 折后价必须合理`,
+          },
+        },
+        {
+          title: '14.2 unittest 单元测试',
+          content: [
+            '`单元测试`是针对最小功能单元（一个函数/方法）的自动化测试：写一次，以后每次改代码跑一遍，回归 bug 立刻现形。',
+            'unittest 是标准库：继承 TestCase，测试方法以 test_ 开头，用 self.assertEqual(a, b)、assertTrue、assertRaises 等断言。',
+            'setUp 方法在每个测试前自动执行，用来准备公共数据；tearDown 做清理。',
+            '运行：python -m unittest test_calc.py -v。全绿安心，一红立刻定位。pytest 是更流行的第三方替代品，语法更简洁。',
+          ],
+          code: {
+            lang: 'python',
+            caption: '一个完整的 unittest 测试文件',
+            source: `import unittest
+
+def divide(a, b):
+    if b == 0:
+        raise ValueError("除数不能为 0")
+    return a / b
+
+class TestDivide(unittest.TestCase):
+    def test_normal(self):
+        self.assertEqual(divide(10, 2), 5)
+
+    def test_float(self):
+        self.assertAlmostEqual(divide(1, 3), 0.3333, places=4)
+
+    def test_zero(self):           # 验证"该报错时报错"
+        with self.assertRaises(ValueError):
+            divide(1, 0)
+
+if __name__ == "__main__":
+    unittest.main()`,
+          },
+        },
+        {
+          title: '14.3 调试三板斧：print、pdb、日志',
+          content: [
+            'print 调试：最朴素也最快，但记得给输出加标签 print("DEBUG x =", x)，完事要删干净。',
+            '`pdb` 是内置断点调试器：代码里插 breakpoint()，运行到那儿暂停，n 单步、p 变量名 查看、c 继续——比狂塞 print 专业得多。',
+            '`logging` 模块是 print 的正式替代：分 DEBUG/INFO/WARNING/ERROR 级别，可统一开关、可写文件，项目代码都用它。',
+            '调试心法：先复现 → 缩小范围（二分注释代码）→ 定位最小出错点 → 修复后补一个测试防止复发。',
+          ],
+          code: {
+            lang: 'python',
+            caption: 'logging 与断点调试',
+            source: `import logging
+logging.basicConfig(level=logging.DEBUG,
+                    format="%(levelname)s %(message)s")
+
+def calc(n):
+    logging.debug(f"收到 n={n}")   # 调试信息
+    result = 100 / n
+    logging.info(f"结果 {result}")
+    return result
+
+calc(5)
+
+# 断点调试：在可疑处插入
+# breakpoint()   # 运行到这里进入交互调试，输入 n/print(x)/c 控制`,
+          },
+        },
+      ],
+      quiz: [
+        {
+          question: 'assert 和 if + raise 的关键区别是？',
+          options: ['A. 没有区别', 'B. assert 在 -O 优化模式下会被整体移除，正式校验必须用 if + raise', 'C. assert 更快', 'D. raise 不能带消息'],
+          answer: 'B',
+          explanation: 'assert 是"开发期自检"，可被执行选项关闭；面向用户的输入校验必须用 if + raise 保证永远生效。',
+        },
+        {
+          question: 'unittest 中被识别为测试用例的方法命名规则是？',
+          answer: '方法名以 test_ 开头（如 test_add），且方法定义在继承 unittest.TestCase 的类里',
+          explanation: '测试框架按命名约定自动发现用例；setUp/tearDown 会在每个 test_ 方法前后自动执行。',
+        },
+        {
+          question: '相比满屏 print，logging 模块的两个优势是？',
+          answer: '可按级别（DEBUG/INFO/…）统一开关输出；可同时输出到控制台和文件，且无需删除调试代码',
+          explanation: '改 level 即可静默全部调试输出；print 则要在上线前逐条删除，极易漏。',
+        },
+      ],
+    },
+    {
+      id: 'py-ch15',
+      title: '第 15 章 综合实战：命令行通讯录',
+      intro: '把前面十五章的知识组装起来：字典存数据、文件持久化、函数拆分、异常兜底——做一个真正能用的命令行通讯录，体验"从零到一"的完整开发流程。',
+      sections: [
+        {
+          title: '15.1 需求分析与数据设计',
+          content: [
+            '先想清楚再动手：通讯录要支持 增、删、查、改、列出全部、退出 六个功能，数据要能保存到文件下次接着用。',
+            '数据结构设计：用字典嵌套——{姓名: {"phone": ..., "email": ...}}，查找 O(1)，天然去重。',
+            '持久化方案：JSON 文件。程序启动时 load，每次修改后 dump，数据随关随存。',
+            '功能拆分：每个功能一个函数，main() 里只放菜单循环——这是"单一职责"的最小实践。',
+          ],
+          code: {
+            lang: 'python',
+            caption: '骨架：菜单循环与数据加载',
+            source: `import json, os
+
+DATA_FILE = "contacts.json"
+
+def load():
+    if os.path.exists(DATA_FILE):
+        with open(DATA_FILE, encoding="utf-8") as f:
+            return json.load(f)
+    return {}
+
+def save(contacts):
+    with open(DATA_FILE, "w", encoding="utf-8") as f:
+        json.dump(contacts, f, ensure_ascii=False, indent=2)`,
+          },
+        },
+        {
+          title: '15.2 核心功能实现',
+          content: [
+            '增改合一：contacts[name] = info 既是新增也是覆盖更新，配合 if name in contacts 给出不同提示。',
+            '删除用 pop(name, None)：第二参数避免键不存在时报 KeyError，返回 None 时表示"没找到这个人"。',
+            '查询支持模糊匹配：遍历字典，if keyword in name 的都列出，体验比精确匹配好。',
+            '每个修改操作后立即 save()，崩溃也不丢数据——宁可多写盘，不可丢数据。',
+          ],
+          code: {
+            lang: 'python',
+            caption: '增删查改四个函数',
+            source: `def add(contacts, name, phone):
+    action = "更新" if name in contacts else "新增"
+    contacts[name] = {"phone": phone}
+    save(contacts)
+    print(f"已{action}：{name}")
+
+def delete(contacts, name):
+    if contacts.pop(name, None) is None:
+        print("查无此人")
+    else:
+        save(contacts)
+        print(f"已删除：{name}")
+
+def search(contacts, keyword):
+    found = {n: i for n, i in contacts.items() if keyword in n}
+    for n, i in found.items():
+        print(f"{n}: {i['phone']}")
+    print(f"共 {len(found)} 条")`,
+          },
+        },
+        {
+          title: '15.3 健壮性收尾与扩展方向',
+          content: [
+            '输入校验：手机号用正则 ^1[3-9]\\d{9}$ 挡掉乱填；空名字直接拒绝。',
+            '异常兜底：菜单主循环包 try/except，单条命令出错不崩整个程序。',
+            '扩展练习：加 email 字段、按姓名排序导出 CSV、用 argparse 支持命令行参数、给查询加分页。',
+            '项目虽小五脏俱全：数据层（JSON 文件）、逻辑层（功能函数）、界面层（菜单循环）——三层结构放大就是真实软件架构。',
+          ],
+          code: {
+            lang: 'python',
+            caption: '带校验与异常保护的菜单循环',
+            source: `import re
+
+def main():
+    contacts = load()
+    menu = {"1": "新增/更新", "2": "删除", "3": "查询", "4": "全部", "0": "退出"}
+    while True:
+        for k, v in menu.items(): print(k, v)
+        try:
+            choice = input("请选择: ").strip()
+            if choice == "0": break
+            elif choice == "1":
+                name = input("姓名: ").strip()
+                phone = input("手机号: ").strip()
+                if not name: print("姓名不能为空"); continue
+                if not re.fullmatch(r"1[3-9]\\d{9}", phone):
+                    print("手机号格式不对"); continue
+                add(contacts, name, phone)
+            # ... 其余分支省略
+        except Exception as e:
+            print("操作失败:", e)   # 单条命令出错不崩溃
+
+main()`,
+          },
+        },
+      ],
+      quiz: [
+        {
+          question: 'contacts.pop(name, None) 中第二参数 None 的作用是？',
+          options: ['A. 删除后把值设为 None', 'B. 键不存在时返回 None 而不是抛 KeyError', 'C. 清空整个字典', 'D. 没有作用'],
+          answer: 'B',
+          explanation: 'pop 的默认值参数让"删除不存在的人"成为正常分支而非异常，配合返回值判断即可给出友好提示。',
+        },
+        {
+          question: '把修改后的数据立即写入 JSON 文件的主要目的是？',
+          answer: '持久化：防止程序崩溃或退出后数据丢失，下次启动可重新 load 恢复',
+          explanation: '内存中的数据断电即失；每次修改后 save 是最简单可靠的持久化策略。',
+        },
+        {
+          question: '通讯录项目体现的"三层结构"是？',
+          answer: '数据层（JSON 文件读写）→ 逻辑层（增删查改函数）→ 界面层（菜单循环），层层之间单向调用',
+          explanation: '分层让每层职责单一、可独立替换：比如把 JSON 换成数据库时，逻辑层和界面层一行不用改。',
+        },
+      ],
+    },
   ],
   patterns: [
     {

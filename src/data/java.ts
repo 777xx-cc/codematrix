@@ -813,6 +813,494 @@ Files.write(Paths.get("b.txt"), lines); // 整体写出到另一个文件`,
         },
       ],
     },
+    {
+      id: 'java-ch11',
+      title: '第 11 章 Lambda 表达式与 Stream API',
+      intro: 'Java 8 是这门语言的分水岭：Lambda 让"把函数当参数传"成为现实，Stream 让集合处理像流水线一样优雅。本章带你写出地道的现代 Java。',
+      sections: [
+        {
+          title: '11.1 Lambda 表达式',
+          content: [
+            '`Lambda` 是匿名函数的简写：(参数) -> { 代码 }。它只能用于"函数式接口"——即只含一个抽象方法的接口，如 Runnable、Comparator。',
+            '写法进化史一目了然：匿名内部类 new Comparator(){...} 十几行，Lambda (a, b) -> a - b 一行搞定。',
+            'Lambda 的简写规则：参数类型可省略；只有一个参数可省括号；方法体只有一句可省 {} 和 return。',
+            '常用函数式接口在 java.util.function 包：Predicate<T> 判断、Function<T,R> 转换、Consumer<T> 消费、Supplier<T> 供给。',
+          ],
+          code: {
+            lang: 'java',
+            caption: '从匿名内部类到 Lambda',
+            source: `// 旧写法：匿名内部类
+list.sort(new Comparator<String>() {
+    public int compare(String a, String b) {
+        return a.length() - b.length();
+    }
+});
+
+// Lambda：同样的逻辑一行
+list.sort((a, b) -> a.length() - b.length());
+
+// 方法引用：更极致的简写
+list.forEach(System.out::println);`,
+          },
+        },
+        {
+          title: '11.2 方法引用',
+          content: [
+            '`方法引用`是 Lambda 的进一步缩写，用 :: 连接：System.out::println 等价于 x -> System.out.println(x)。',
+            '四种形态：静态方法引用 Math::max、实例方法引用 s::length、类的实例方法 String::compareTo、构造引用 ArrayList::new。',
+            '能用方法引用就不要写 Lambda——更短、更清晰，还能直接复用已有方法。',
+          ],
+          code: {
+            lang: 'java',
+            caption: '四种方法引用',
+            source: `// 静态方法
+Function<Double, Double> f = Math::sqrt;
+// 某个对象的方法
+Consumer<String> c = System.out::println;
+// 任意对象的实例方法（第一个参数当调用者）
+Comparator<String> cmp = String::compareToIgnoreCase;
+// 构造方法
+Supplier<ArrayList<String>> s = ArrayList::new;`,
+          },
+        },
+        {
+          title: '11.3 Stream 流式处理',
+          content: [
+            '`Stream` 是集合的"流水线"：数据源 → 中间操作（filter/map/sorted，懒执行）→ 终端操作（collect/forEach/count，触发计算）。',
+            '经典三连：list.stream().filter(x -> x > 60).map(x -> x * 2).collect(Collectors.toList())——筛、变、收。',
+            'Stream 不是容器、不存数据；原集合不会被修改；流只能用一次，用完即废。',
+            '统计很方便：count()、max()、min()、sum()；分组用 Collectors.groupingBy，连接字符串用 Collectors.joining(",")。',
+          ],
+          code: {
+            lang: 'java',
+            caption: 'Stream 经典流水线',
+            source: `List<Integer> scores = List.of(90, 45, 78, 60, 88);
+
+List<Integer> passed = scores.stream()
+    .filter(s -> s >= 60)          // 及格
+    .sorted((a, b) -> b - a)       // 降序
+    .collect(Collectors.toList()); // [90, 88, 78, 60]
+
+long count = scores.stream().filter(s -> s >= 60).count(); // 4
+int sum = scores.stream().mapToInt(Integer::intValue).sum();`,
+          },
+        },
+      ],
+      quiz: [
+        {
+          question: 'Lambda 表达式可以用于什么样的接口？',
+          options: ['A. 任何接口', 'B. 只含一个抽象方法的函数式接口', 'C. 含默认方法的接口', 'D. 抽象类'],
+          answer: 'B',
+          explanation: 'Lambda 本质是"单方法接口的匿名实现"。接口有多个抽象方法时编译器无法判断实现哪个，会报错。',
+        },
+        {
+          question: 'Stream 的中间操作（如 filter）何时真正执行？',
+          answer: '遇到终端操作（collect/forEach/count 等）时才执行——这叫"懒执行"',
+          explanation: '只写 filter/map 不产生任何计算，终端操作触发整条流水线一次性求值，这也是 Stream 高效的原因。',
+        },
+        {
+          question: 'list.forEach(System.out::println) 中 System.out::println 是？',
+          answer: '方法引用，等价于 Lambda：x -> System.out.println(x)',
+          explanation: '它是"某个对象的实例方法引用"，是四种方法引用形态之一。',
+        },
+      ],
+    },
+    {
+      id: 'java-ch12',
+      title: '第 12 章 多线程入门',
+      intro: '程序默认只有一个"主线程"顺序执行。多线程让程序同时做多件事：边下载边响应点击、边计算边刷新界面。本章掌握线程的创建、同步与通信的基本概念。',
+      sections: [
+        {
+          title: '12.1 创建线程的两种方式',
+          content: [
+            '`线程（Thread）`是程序执行的最小单位。main 方法就跑在主线程里，Thread.currentThread().getName() 能看到它叫 "main"。',
+            '方式一：继承 Thread 类、重写 run() 方法，然后 start() 启动。注意是 start() 不是 run()——直接调 run() 只是普通方法调用，不会开新线程。',
+            '方式二（推荐）：实现 Runnable 接口，把它交给 Thread：new Thread(task).start()。任务与线程分离，更灵活；Lambda 时代可以一行写完。',
+            'start() 之后线程"就绪"，何时真正运行由操作系统调度——所以多线程程序的输出顺序通常不确定。',
+          ],
+          code: {
+            lang: 'java',
+            caption: '创建并启动线程',
+            source: `// 方式一：继承 Thread
+class MyThread extends Thread {
+    public void run() { System.out.println("子线程运行"); }
+}
+new MyThread().start();
+
+// 方式二：Runnable + Lambda（推荐）
+new Thread(() -> {
+    System.out.println("任务在 " +
+        Thread.currentThread().getName() + " 中运行");
+}).start();`,
+          },
+        },
+        {
+          title: '12.2 线程安全与 synchronized',
+          content: [
+            '`线程安全`问题：多个线程同时改同一份数据，结果不可预料。经典例子：两个线程各自对 count 做 10000 次 ++，结果常小于 20000。',
+            '原因：count++ 不是一步完成的（读、加、写三步），两个线程的指令会交错，互相覆盖。',
+            '`synchronized` 给代码块或方法上锁：同一时刻只有一个线程能进入，其余排队。锁的对象必须同一个才有效。',
+            '口诀：共享可变数据就要同步；局部变量天然安全（每个线程各有一份）。',
+          ],
+          code: {
+            lang: 'java',
+            caption: 'synchronized 保护共享计数器',
+            source: `class Counter {
+    private int count = 0;
+    public synchronized void increment() { count++; } // 上锁
+    public int get() { return count; }
+}
+
+Counter c = new Counter();
+Thread t1 = new Thread(() -> { for (int i = 0; i < 10000; i++) c.increment(); });
+Thread t2 = new Thread(() -> { for (int i = 0; i < 10000; i++) c.increment(); });
+t1.start(); t2.start();
+t1.join(); t2.join();          // 等两个线程结束
+System.out.println(c.get());   // 稳定输出 20000`,
+          },
+        },
+        {
+          title: '12.3 线程生命周期与常用方法',
+          content: [
+            '线程六态：新建（new）→ 就绪/运行（Runnable）→ 阻塞/等待（Blocked/Waiting）→ 终止（Terminated）。start 后就绪，抢到 CPU 才运行。',
+            '`sleep(ms)` 让当前线程睡一会儿（不释放锁）；`join()` 等待另一个线程结束再继续；`yield()` 让出 CPU 重新排队。',
+            '中断是"礼貌叫停"：t.interrupt() 只是设置标志位，线程要自己检查并退出——不要再用过时的 stop() 强杀。',
+            '线程池（ExecutorService）是工程实践：线程很贵，复用而不是反复新建。Executors.newFixedThreadPool(4) 一行建池。',
+          ],
+          code: {
+            lang: 'java',
+            caption: 'sleep / join / 线程池',
+            source: `Thread t = new Thread(() -> {
+    for (int i = 0; i < 5; i++) {
+        System.out.println("工作中 " + i);
+        try { Thread.sleep(500); } catch (InterruptedException e) { return; }
+    }
+});
+t.start();
+t.join(); // 主线程等它干完
+
+// 线程池
+ExecutorService pool = Executors.newFixedThreadPool(4);
+pool.submit(() -> System.out.println("池中的任务"));
+pool.shutdown();`,
+          },
+        },
+      ],
+      quiz: [
+        {
+          question: '启动线程应该调用哪个方法？',
+          options: ['A. run()', 'B. start()', 'C. exec()', 'D. begin()'],
+          answer: 'B',
+          explanation: 'start() 才会创建新线程并异步调用 run()；直接调 run() 只是当前线程里的普通方法调用。',
+        },
+        {
+          question: '两个线程同时对共享变量 count 做自增，结果偏小，根本原因是？',
+          answer: 'count++ 是"读-加-写"三步操作，线程指令交错导致互相覆盖（非原子操作）',
+          explanation: '解决：synchronized 加锁，或使用 AtomicInteger 等原子类。',
+        },
+        {
+          question: 'join() 方法的作用是？',
+          answer: '让当前线程等待目标线程执行结束后再继续',
+          explanation: '常用于主线程汇总子线程结果的场景，如 t.join() 后再读取 t 计算的数据。',
+        },
+      ],
+    },
+    {
+      id: 'java-ch13',
+      title: '第 13 章 正则表达式与文本处理',
+      intro: '验证手机号、提取日志里的 IP、批量替换格式——这类文本问题用正则表达式一行解决。本章系统学习正则语法与 Java 中的 Pattern/Matcher 用法。',
+      sections: [
+        {
+          title: '13.1 正则语法速通',
+          content: [
+            '`正则表达式`是用一套符号描述文本模式的"迷你语言"。\\d 数字、\\w 单词字符、\\s 空白；. 任意字符；[abc] 三者之一；[^abc] 取反。',
+            '量词控制次数：* 零到多次、+ 至少一次、? 零或一次、{n} 恰好 n 次、{n,m} 区间。" greedy 贪婪"是默认——能多吃就多吃，加 ? 变"懒惰"。',
+            '^ 和 $ 锚定首尾；() 分组还能"捕获"内容；(?:...) 分组不捕获；| 表示"或"。',
+            'Java 字符串里写正则，反斜杠要双写：想匹配数字写 "\\\\d"，这是最容易忘的一点。',
+          ],
+          code: {
+            lang: 'java',
+            caption: '常见正则模式',
+            source: `String phone = "1[3-9]\\\\d{9}";        // 手机号
+String email = "\\\\w+@[\\\\w.]+";        // 简易邮箱
+String qq = "[1-9]\\\\d{4,10}";           // QQ 号
+String date = "\\\\d{4}-\\\\d{2}-\\\\d{2}"; // 2026-10-07
+
+System.out.println("13812345678".matches(phone)); // true`,
+          },
+        },
+        {
+          title: '13.2 matches、split 与 replaceAll',
+          content: [
+            'String 自带三个正则方法：matches() 整体匹配（要求整串符合模式）；split() 按正则切分；replaceAll() 按正则替换。',
+            'split 的经典用法："a, b,c ; d".split("[,;]\\\\s*") 同时按逗号分号切并吃掉空格。',
+            'replaceAll 里 $1 引用第一个捕获组：把 (\\\\d{4})-(\\\\d{2})-(\\\\d{2}) 替换成 $2/$3/$1 就完成日期格式转换。',
+          ],
+          code: {
+            lang: 'java',
+            caption: '一行正则解决文本清洗',
+            source: `String s = "苹果, 香蕉;橘子,  葡萄";
+String[] fruits = s.split("[,;]\\\\s*");
+// [苹果, 香蕉, 橘子, 葡萄]
+
+// 隐藏手机号中间四位
+String masked = "13812345678".replaceAll("(\\\\d{3})\\\\d{4}(\\\\d{4})", "$1****$2");
+// 138****5678`,
+          },
+        },
+        {
+          title: '13.3 Pattern 与 Matcher',
+          content: [
+            '需要反复用同一个模式时，先编译成 `Pattern` 对象：Pattern p = Pattern.compile("\\\\d+")，比每次 matches 快。',
+            '`Matcher` 是"匹配器"：m.find() 找下一个匹配位置（可循环找全部），m.group() 取出匹配内容，m.group(1) 取第一个捕获组。',
+            'matches 与 find 的区别：matches 要求整串匹配，find 是在串中"寻找"匹配片段——提取场景都用 find。',
+            '日志分析、爬虫解析、输入校验都靠这套组合拳：compile 一次，find 循环，group 提取。',
+          ],
+          code: {
+            lang: 'java',
+            caption: '从日志中提取所有 IP 地址',
+            source: `String log = "用户 192.168.1.1 登录，来自 10.0.0.8 的请求被拒绝";
+Pattern p = Pattern.compile("\\\\d+\\\\.\\\\d+\\\\.\\\\d+\\\\.\\\\d+");
+Matcher m = p.matcher(log);
+while (m.find()) {
+    System.out.println("发现 IP: " + m.group());
+}
+// 发现 IP: 192.168.1.1
+// 发现 IP: 10.0.0.8`,
+          },
+        },
+      ],
+      quiz: [
+        {
+          question: 'Java 代码中要匹配一个数字，正则字符串应写成？',
+          options: ['A. "\\d"', 'B. "\\\\d"', 'C. "/d"', 'D. "[数字]"'],
+          answer: 'B',
+          explanation: 'Java 字符串中 \\\\ 才表示一个真正的反斜杠，所以正则的 \\d 要写成 "\\\\d"。',
+        },
+        {
+          question: 'String.matches() 与 Matcher.find() 的区别是？',
+          answer: 'matches 要求整个字符串完全匹配模式；find 在字符串中寻找下一个匹配的片段，可循环找全部',
+          explanation: '校验用 matches（如手机号校验），提取用 find（如从日志中抓 IP）。',
+        },
+        {
+          question: '正则 (\\d{4})-(\\d{2})-(\\d{2}) 中，replaceAll 的替换串 "$3/$2/$1" 效果是？',
+          answer: '把 2026-10-07 变成 07/10/2026——$n 引用第 n 个捕获组的内容',
+          explanation: '捕获组按左括号顺序编号，替换串中用 $1、$2、$3 引用它们，实现重排。',
+        },
+      ],
+    },
+    {
+      id: 'java-ch14',
+      title: '第 14 章 Java 新特性速览',
+      intro: 'Java 每半年一个版本，新写法层出不穷。本章精选最实用的现代特性：var 类型推断、record 记录类、增强 switch、文本块，让你的代码立刻"年轻十岁"。',
+      sections: [
+        {
+          title: '14.1 var 局部变量类型推断',
+          content: [
+            '`var`（Java 10+）让编译器根据右边推断类型：var list = new ArrayList<String>() 省去一长串重复。',
+            'var 不是动态类型！类型在编译期就确定了，之后不可变——只是把书写权交给编译器。',
+            '使用边界：只能用于局部变量且必须同时初始化；var x; 或 var x = null 都编译不过。',
+            '建议：右边类型一目了然时用 var（new 对象、工厂方法）；看不出类型时老老实实写全。',
+          ],
+          code: {
+            lang: 'java',
+            caption: 'var 的正确打开方式',
+            source: `var name = "弈";                    // String
+var scores = new ArrayList<Integer>(); // ArrayList<Integer>
+var map = new HashMap<String, Integer>(); // 省去重复
+
+// var x;        // 错误：必须初始化
+// var y = null; // 错误：推断不出类型
+
+for (var i = 0; i < 10; i++) { }   // 循环里也能用`,
+          },
+        },
+        {
+          title: '14.2 record 记录类',
+          content: [
+            '`record`（Java 16+ 正式）一行定义"纯数据类"：record Point(int x, int y) {}，自动生成构造方法、getter、equals、hashCode、toString。',
+            '以前写一个 POJO 要五六十行模板代码，record 一行搞定——这就是它存在的意义。',
+            'record 天生不可变：没有 setter，字段是 final 的。getter 名字不带 get：p.x() 而不是 p.getX()。',
+            '适合：DTO 数据传输对象、方法的复合返回值、Map 的复合键。不适合：需要改字段的场景。',
+          ],
+          code: {
+            lang: 'java',
+            caption: 'record 一行顶五十行',
+            source: `record Point(int x, int y) {}  // 完！
+record Student(String name, int score) {}
+
+Point p = new Point(3, 4);
+System.out.println(p.x());   // 3（注意：不是 getX()）
+System.out.println(p);       // Point[x=3, y=4]（自动 toString）
+
+// record 自带正确的 equals：
+new Point(1, 2).equals(new Point(1, 2)); // true`,
+          },
+        },
+        {
+          title: '14.3 增强 switch 与文本块',
+          content: [
+            '`switch 表达式`（Java 14+）用箭头语法：case 1 -> "一"，不再有穿透问题，还能直接返回值：String s = switch(day){ ... };。',
+            '箭头分支不用写 break；多条语句用 {} 包起来并用 yield 返回值。',
+            '`文本块`（Java 15+）三个引号 """ 包起来的多行字符串，写 SQL、JSON、HTML 片段再也不用拼加号和转义。',
+            'instanceof 模式匹配：if (o instanceof String s) 判断+强转一步到位，s 直接可用。',
+          ],
+          code: {
+            lang: 'java',
+            caption: '现代 switch 与文本块',
+            source: `String level = switch (score / 10) {
+    case 10, 9 -> "优秀";
+    case 8, 7  -> "良好";
+    case 6     -> "及格";
+    default    -> "不及格";
+};  // 没有 break，不会穿透
+
+String json = """
+    {
+      "name": "弈",
+      "lang": "Java"
+    }
+    """;  // 多行字符串，无需拼接
+
+if (obj instanceof String s && s.length() > 3) { /* s 已是 String */ }`,
+          },
+        },
+      ],
+      quiz: [
+        {
+          question: 'var name = "弈"; 之后 name 的类型是？',
+          options: ['A. Object，可再赋任意值', 'B. String，编译期就确定且不可改变', 'C. var 类型', 'D. 运行期才确定'],
+          answer: 'B',
+          explanation: 'var 只是编译期的"书写省略"，推断为 String 后就是彻底的 String，再赋数字会编译报错。',
+        },
+        {
+          question: 'record Point(int x, int y) {} 会自动生成哪些成员？',
+          answer: '构造方法、x()/y() 访问器、equals()、hashCode()、toString()，且字段为 final 不可变',
+          explanation: 'record 专为"不可变数据载体"设计，省掉全部模板代码；需要可变字段时仍用普通 class。',
+        },
+        {
+          question: '增强 switch 表达式相比老式 switch 的两点改进是？',
+          answer: '箭头分支不会穿透（无需 break）；switch 可以作为表达式直接返回值',
+          explanation: 'case A -> 语句 的形式从根本上消除了忘记 break 的穿透 bug，yield 用于块内返回值。',
+        },
+      ],
+    },
+    {
+      id: 'java-ch15',
+      title: '第 15 章 常见设计模式入门',
+      intro: '设计模式是前人踩坑后总结的"套路"。本章讲透面试与工程中最常出现的三个：单例、工厂、观察者，理解"为什么这样设计"比背代码更重要。',
+      sections: [
+        {
+          title: '15.1 单例模式',
+          content: [
+            '`单例（Singleton）`保证一个类全程序只有一个实例：数据库连接池、配置管理器都适合单例。',
+            '实现要点：构造方法私有化（外面 new 不了）+ 静态方法返回唯一实例。',
+            '饿汉式：类加载时就创建（简单但可能浪费）；懒汉式：用时才创建（要注意线程安全，加 synchronized 或双重检查锁）。',
+            '最优雅的写法是枚举单例：enum Singleton { INSTANCE }，天然防反射攻击和序列化破坏，一行到位。',
+          ],
+          code: {
+            lang: 'java',
+            caption: '三种单例写法',
+            source: `// 饿汉式：类加载即创建
+class Config1 {
+    private static final Config1 INSTANCE = new Config1();
+    private Config1() {}
+    public static Config1 getInstance() { return INSTANCE; }
+}
+
+// 懒汉式（双重检查锁，线程安全）
+class Config2 {
+    private static volatile Config2 instance;
+    private Config2() {}
+    public static Config2 getInstance() {
+        if (instance == null) {
+            synchronized (Config2.class) {
+                if (instance == null) instance = new Config2();
+            }
+        }
+        return instance;
+    }
+}
+
+// 枚举单例：最简单最安全
+enum Config3 { INSTANCE }`,
+          },
+        },
+        {
+          title: '15.2 工厂模式',
+          content: [
+            '`工厂模式`把"创建对象"这件事交给专门的工厂方法，调用方只说"我要一个圆的"，不用关心 new 的是哪个具体类。',
+            '简单工厂：一个静态方法按参数返回不同子类对象，如 ShapeFactory.create("circle")。',
+            '价值在于解耦：新增一种图形时只改工厂，调用方代码一行不动——这就是"开闭原则"（对扩展开放、对修改关闭）。',
+            'JDK 里的身影：Integer.valueOf()、Calendar.getInstance() 都是工厂方法的例子。',
+          ],
+          code: {
+            lang: 'java',
+            caption: '简单工厂：按名字造对象',
+            source: `interface Shape { void draw(); }
+class Circle implements Shape { public void draw() { System.out.println("画圆"); } }
+class Square implements Shape { public void draw() { System.out.println("画方"); } }
+
+class ShapeFactory {
+    public static Shape create(String type) {
+        return switch (type) {
+            case "circle" -> new Circle();
+            case "square" -> new Square();
+            default -> throw new IllegalArgumentException("未知图形");
+        };
+    }
+}
+
+Shape s = ShapeFactory.create("circle"); // 调用方不认识 Circle
+s.draw();`,
+          },
+        },
+        {
+          title: '15.3 观察者模式',
+          content: [
+            '`观察者模式`定义"一对多"的订阅关系：被观察者状态一变，所有订阅者自动收到通知。按钮点击、消息推送、事件总线都是它。',
+            '两个角色：Subject（主题，维护观察者列表、负责通知）和 Observer（观察者，实现 update 方法）。',
+            '流程：观察者调用 subject.attach(o) 订阅；主题变化时遍历列表逐个 o.update()。',
+            'GUI 的事件监听、MQ 消息订阅、前端框架的数据绑定，本质都是观察者模式的变体。',
+          ],
+          code: {
+            lang: 'java',
+            caption: '公众号推送 = 观察者模式',
+            source: `interface Observer { void update(String article); }
+
+class OfficialAccount {  // 被观察者
+    private List<Observer> subs = new ArrayList<>();
+    public void subscribe(Observer o) { subs.add(o); }
+    public void publish(String article) {
+        for (Observer o : subs) o.update(article); // 通知所有订阅者
+    }
+}
+
+OfficialAccount account = new OfficialAccount();
+account.subscribe(article -> System.out.println("弈 收到：" + article));
+account.publish("Java 设计模式详解"); // 弈 收到：Java 设计模式详解`,
+          },
+        },
+      ],
+      quiz: [
+        {
+          question: '单例模式的两个核心实现要点是？',
+          options: ['A. 继承 + 多态', 'B. 私有构造方法 + 静态方法返回唯一实例', 'C. final 类 + final 方法', 'D. 接口 + 抽象类'],
+          answer: 'B',
+          explanation: '私有化构造方法堵住外部 new 的通道，静态方法掌握唯一实例的发放权，二者缺一不可。',
+        },
+        {
+          question: '工厂模式最大的好处是？',
+          answer: '解耦对象的创建与使用：新增产品类时调用方代码不用修改（开闭原则）',
+          explanation: '调用方只依赖接口和工厂，不认识具体类；扩展时只改工厂一处。',
+        },
+        {
+          question: '观察者模式适合什么场景？',
+          answer: '一个对象的状态变化需要自动通知多个对象：事件监听、消息订阅、数据绑定等',
+          explanation: '核心是"订阅-通知"机制，让主题和订阅者互不直接依赖，随时可增删观察者。',
+        },
+      ],
+    },
   ],
   patterns: [
     {

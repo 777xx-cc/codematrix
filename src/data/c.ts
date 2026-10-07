@@ -625,6 +625,813 @@ int main() { printf("%d\\n", add(2, 3)); return 0; }
         },
       ],
     },
+    {
+      id: 'c-ch9',
+      title: '第 9 章 字符串处理进阶',
+      intro: 'C 没有字符串类型，只有字符数组和一套约定。本章把字符串处理练到肌肉记忆：遍历统计、手写库函数、安全的输入输出，以及 strtok/sprintf 等进阶工具。',
+      sections: [
+        {
+          title: '9.1 手写字符串函数',
+          content: [
+            '面试常考"不用库函数实现 strlen/strcpy"：本质是 while 循环遇到 \'\\0\' 停——所有字符串函数的灵魂就这一条。',
+            '手写 strlen：int n = 0; while (s[n] != \'\\0\') n++; 返回 n。一行循环搞定。',
+            '手写 strcpy：逐字符复制直到把 \'\\0\' 也复制过去，while ((*d++ = *s++)); 是经典的指针紧缩写法。',
+            '手写 strcmp：逐字符相减，遇到不等或同时到 \'\\0\' 就返回差值——返回值符号即字典序。',
+          ],
+          code: {
+            lang: 'c',
+            caption: '三大函数手写版',
+            source: `int my_strlen(const char *s) {
+    int n = 0;
+    while (s[n] != '\\0') n++;
+    return n;
+}
+
+void my_strcpy(char *d, const char *s) {
+    while ((*d++ = *s++));   // 赋值表达式的值即所赋字符，\\0 时停
+}
+
+int my_strcmp(const char *a, const char *b) {
+    while (*a && (*a == *b)) { a++; b++; }
+    return (unsigned char)*a - (unsigned char)*b;
+}`,
+          },
+        },
+        {
+          title: '9.2 安全输入与格式化输出',
+          content: [
+            'scanf("%s", s) 不检查长度，输入超长直接写穿数组——改用 fgets(s, sizeof s, stdin) 限定上限。',
+            'fgets 会把换行符也读进来，记得去掉：s[strcspn(s, "\\n")] = \'\\0\';。',
+            '`sprintf` 把格式化结果"打印"进字符串：sprintf(buf, "%d-%02d-%02d", y, m, d) 生成日期串。',
+            '`snprintf(buf, sizeof buf, ...)` 是安全版，永远带上缓冲区大小，杜绝溢出。',
+            'sscanf 反向解析：sscanf("2026-10-07", "%d-%d-%d", &y, &m, &d) 从字符串按格式拆数据。',
+          ],
+          code: {
+            lang: 'c',
+            caption: '安全输入与字符串格式化',
+            source: `char name[32];
+fgets(name, sizeof name, stdin);       // 安全读入一行
+name[strcspn(name, "\\n")] = '\\0';      // 去掉换行符
+
+int y = 2026, m = 10, d = 7;
+char date[16];
+snprintf(date, sizeof date, "%04d-%02d-%02d", y, m, d);
+// date = "2026-10-07"
+
+int hh, mm;
+sscanf("12:30", "%d:%d", &hh, &mm);    // 反向解析`,
+          },
+        },
+        {
+          title: '9.3 strtok 分割与常见算法',
+          content: [
+            '`strtok(s, ",")` 按分隔符切字符串：第一次传字符串，之后传 NULL 继续切下一段，返回 NULL 表示切完。',
+            '注意 strtok 会修改原字符串（把分隔符改成 \\0），且有静态状态不可重入——正式项目用 strtok_r。',
+            '经典算法：统计单词数（按空格切分计数）、字符串反转（双指针）、判断回文（两头对比）、大小写转换（±32 或 toupper/tolower）。',
+            'ctype.h 提供字符判断：isdigit、isalpha、isspace、toupper、tolower，比自己写范围判断可靠。',
+          ],
+          code: {
+            lang: 'c',
+            caption: 'strtok 切分与回文判断',
+            source: `#include <string.h>
+#include <ctype.h>
+
+char text[] = "apple,banana,orange";
+for (char *p = strtok(text, ","); p; p = strtok(NULL, ",")) {
+    printf("%s\\n", p);   // apple / banana / orange
+}
+
+// 回文判断
+int isPal(const char *s) {
+    int i = 0, j = strlen(s) - 1;
+    while (i < j)
+        if (tolower(s[i++]) != tolower(s[j--])) return 0;
+    return 1;
+}
+printf("%d\\n", isPal("Level"));  // 1`,
+          },
+        },
+      ],
+      quiz: [
+        {
+          question: 'C 语言判断字符串结束的标志是？',
+          options: ['A. 空格', 'B. 换行符', 'C. 空字符 \'\\0\'', 'D. 文件结束符'],
+          answer: 'C',
+          explanation: '所有字符串函数都靠 \'\\0\' 定边界。字符数组忘了放 \'\\0\'，strlen/printf 会一路读越界。',
+        },
+        {
+          question: '为什么读用户输入推荐 fgets 而不是 scanf("%s")？',
+          answer: 'fgets 限定最大读取长度，不会缓冲区溢出；scanf("%s") 不检查长度，输入超长会写穿数组',
+          explanation: 'fgets 的代价是会保留换行符，用 strcspn 去掉即可——安全远比这点麻烦重要。',
+        },
+        {
+          question: 'strtok 的两个使用注意点是？',
+          answer: '会破坏原字符串（分隔符被改写为 \\0）；内部有静态状态、不可重入（多线程或嵌套分割要用 strtok_r）',
+          explanation: '第一次调用传字符串，后续传 NULL 续切；要保留原串需先 strcpy 一份副本再切。',
+        },
+      ],
+    },
+    {
+      id: 'c-ch10',
+      title: '第 10 章 动态内存管理深入',
+      intro: '数组长度编译期定死的限制，靠堆内存打破。本章系统学习 malloc/calloc/realloc/free 的正确用法，以及内存泄漏、野指针、重复释放三大重灾区的预防。',
+      sections: [
+        {
+          title: '10.1 malloc 与 free 的正确姿势',
+          content: [
+            '`malloc(n)` 在堆上申请 n 字节，返回 void* 需转型：int *p = malloc(n * sizeof(int))。失败返回 NULL，必须检查。',
+            'sizeof 用法：malloc(n * sizeof *p) 让类型跟着指针走，改类型时不用改这里——防御性写法。',
+            '`free(p)` 释放内存后，p 本身还是旧地址（野指针），立即 p = NULL 是好习惯。',
+            'malloc 的内存内容是"垃圾值"（不初始化）；calloc(n, size) 申请并清零，适合数组。',
+          ],
+          code: {
+            lang: 'c',
+            caption: '动态数组标准写法',
+            source: `#include <stdlib.h>
+
+int n;
+scanf("%d", &n);
+int *arr = malloc(n * sizeof *arr);  // 运行时定长！
+if (arr == NULL) { perror("malloc"); return 1; }
+
+for (int i = 0; i < n; i++) arr[i] = i * i;
+
+free(arr);
+arr = NULL;   // 防野指针`,
+          },
+        },
+        {
+          title: '10.2 realloc 扩容与内存泄漏',
+          content: [
+            '`realloc(p, newSize)` 调整已申请内存的大小：内容保留，可能原地扩也可能搬家（旧地址作废，用返回值更新指针）。',
+            '安全写法：int *tmp = realloc(p, newSize); if (tmp) p = tmp;——直接 p = realloc(p, ...) 在失败时会弄丢原指针造成泄漏。',
+            '`内存泄漏`：丢了指向堆内存的指针又没 free，那块内存永远回不去。长命程序泄漏会越跑越慢直至崩溃。',
+            '自查口诀：每个 malloc 配一个 free；每个返回堆内存的函数，文档必须写明"谁负责释放"。',
+          ],
+          code: {
+            lang: 'c',
+            caption: 'realloc 安全扩容',
+            source: `int cap = 4, size = 0;
+int *v = malloc(cap * sizeof *v);
+
+void push(int **pv, int *cap, int *size, int x) {
+    if (*size == *cap) {
+        int *tmp = realloc(*pv, 2 * *cap * sizeof **pv);
+        if (!tmp) return;      // 扩容失败，原数据还在
+        *pv = tmp;
+        *cap *= 2;
+    }
+    (*pv)[(*size)++] = x;
+}   // 这就是一个迷你 vector 的核心`,
+          },
+        },
+        {
+          title: '10.3 三大内存事故',
+          content: [
+            '重复释放（double free）：free 同一块内存两次是未定义行为，常发生在复制了指针却都以为是所有者。对策：明确所有权 + free 后 NULL。',
+            '释放后使用（use after free）：free 后继续读写那块内存。内容可能还在（假象），但随时被覆盖。对策同上加代码审查。',
+            '越界写入：malloc(10) 却写 p[10]，堆元数据被破坏，free 时才崩——案发点和报错点分离，最难查。',
+            '工具：Linux 用 valgrind 一键体检内存错误；Windows 可用 Dr. Memory 或编译器 AddressSanitizer（-fsanitize=address）。',
+          ],
+          code: {
+            lang: 'c',
+            caption: '错误示范与正确习惯',
+            source: `int *p = malloc(sizeof(int) * 10);
+// 错误 1：越界
+// p[10] = 0;               // 堆元数据被踩
+
+// 错误 2：重复释放
+// free(p); free(p);        // 未定义行为
+
+// 正确：用完释放并置空
+free(p);
+p = NULL;
+if (p != NULL) { /* 安全 */ }   // NULL 检查总是有效
+
+// 调试神器：gcc -fsanitize=address main.c
+// 越界/泄漏/重复释放在运行时直接报出来`,
+          },
+        },
+      ],
+      quiz: [
+        {
+          question: 'malloc 失败时返回什么？正确处理方式？',
+          options: ['A. 返回 0，继续用', 'B. 返回 NULL，必须检查并处理（退出或降级）', 'C. 抛出异常', 'D. 自动重试'],
+          answer: 'B',
+          explanation: '内存耗尽时 malloc 返回 NULL，不解判空就解引用会立刻崩溃。嵌入式/服务程序必须检查。',
+        },
+        {
+          question: '为什么 p = realloc(p, newSize) 是不安全的写法？',
+          answer: 'realloc 失败返回 NULL 时直接覆盖 p，原内存块的地址丢失——既用不了也 free 不掉，造成泄漏',
+          explanation: '先用临时变量接收返回值，确认非 NULL 再赋给 p。',
+        },
+        {
+          question: 'free(p) 之后应立即执行什么操作，为什么？',
+          answer: 'p = NULL；防止 p 成为野指针——再次 free 或解引用 NULL 能立刻暴露问题，而操作旧地址是静默的未定义行为',
+          explanation: 'free(NULL) 是安全的空操作，这是标准保证的；free(旧地址) 第二次则是 double free 事故。',
+        },
+      ],
+    },
+    {
+      id: 'c-ch11',
+      title: '第 11 章 排序与查找算法',
+      intro: '排序查找是算法世界的第一课。本章把冒泡、选择、插入、快速排序和二分查找全部手写一遍，并理解它们的复杂度差异与适用场景。',
+      sections: [
+        {
+          title: '11.1 三大入门排序',
+          content: [
+            '冒泡排序：相邻比较交换，每轮最大值沉底。稳定、好写，O(n²)。',
+            '选择排序：每轮选最小值放到前面。交换次数最少（n 次），同样 O(n²)。',
+            '插入排序：像理扑克牌，把每张牌插进已排好的部分。对"几乎有序"的数据接近 O(n)，小数据很快。',
+            '稳定性概念：相等元素排序后相对顺序不变叫"稳定"。冒泡和插入稳定，选择不稳定。',
+          ],
+          code: {
+            lang: 'c',
+            caption: '插入排序：理牌式排序',
+            source: `void insertSort(int a[], int n) {
+    for (int i = 1; i < n; i++) {
+        int key = a[i], j = i - 1;
+        while (j >= 0 && a[j] > key) {
+            a[j + 1] = a[j];   // 比 key 大的右移
+            j--;
+        }
+        a[j + 1] = key;        // 插入空位
+    }
+}
+
+// 冒泡核心（供对照）
+void bubbleSort(int a[], int n) {
+    for (int i = 0; i < n - 1; i++)
+        for (int j = 0; j < n - 1 - i; j++)
+            if (a[j] > a[j + 1]) {
+                int t = a[j]; a[j] = a[j + 1]; a[j + 1] = t;
+            }
+}`,
+          },
+        },
+        {
+          title: '11.2 快速排序思想',
+          content: [
+            '`快速排序`：选一个基准值 pivot，把数组分成"≤pivot"和"≥pivot"两半，再对两半递归——分治思想的教科书案例。',
+            '平均 O(n log n)，是最快的通用内排序；最坏（每次划分极不均）退化 O(n²)，随机选基准可规避。',
+            '划分（partition）是核心：双指针从两端向中间扫，左边找大的、右边找小的，交换，直到相遇。',
+            '快排不稳定、原地排序（O(log n) 栈空间）。理解它比默写它更重要——面试会让你讲划分过程。',
+          ],
+          code: {
+            lang: 'c',
+            caption: '快排的划分与递归',
+            source: `int partition(int a[], int lo, int hi) {
+    int pivot = a[hi];         // 取末位做基准
+    int i = lo;
+    for (int j = lo; j < hi; j++)
+        if (a[j] < pivot) {    // 小的都换到左区
+            int t = a[i]; a[i] = a[j]; a[j] = t;
+            i++;
+        }
+    int t = a[i]; a[i] = a[hi]; a[hi] = t;
+    return i;                  // 基准最终位置
+}
+
+void quickSort(int a[], int lo, int hi) {
+    if (lo >= hi) return;
+    int p = partition(a, lo, hi);
+    quickSort(a, lo, p - 1);   // 左半
+    quickSort(a, p + 1, hi);   // 右半
+}`,
+          },
+        },
+        {
+          title: '11.3 二分查找与边界艺术',
+          content: [
+            '`二分查找`：有序数组中每次砍一半，O(log n)——10 亿数据也只要 30 次比较。',
+            '前提必须是"有序"，这是它的命门；插入删除频繁的场合维护有序成本高，要权衡。',
+            '边界是灵魂：while (left <= right) 配 right = mid - 1；mid 写 left + (right - left) / 2 防溢出。',
+            '变体常考：找第一个 ≥ x 的位置（lower_bound）、最后一个 ≤ x 的位置——二分答案思想能解决"最大值最小化"类问题。',
+          ],
+          code: {
+            lang: 'c',
+            caption: '标准二分与 lower_bound',
+            source: `int binarySearch(int a[], int n, int target) {
+    int left = 0, right = n - 1;
+    while (left <= right) {
+        int mid = left + (right - left) / 2;  // 防溢出
+        if (a[mid] == target) return mid;
+        if (a[mid] < target) left = mid + 1;
+        else right = mid - 1;
+    }
+    return -1;
+}
+
+// 找第一个 >= x 的下标（答案区间收缩）
+int lowerBound(int a[], int n, int x) {
+    int left = 0, right = n;   // 右开区间
+    while (left < right) {
+        int mid = left + (right - left) / 2;
+        if (a[mid] >= x) right = mid;
+        else left = mid + 1;
+    }
+    return left;
+}`,
+          },
+        },
+      ],
+      quiz: [
+        {
+          question: '对"几乎有序"的数组，哪种入门排序最快？',
+          options: ['A. 冒泡', 'B. 选择', 'C. 插入', 'D. 一样快'],
+          answer: 'C',
+          explanation: '插入排序在元素基本就位时只需少量移动，接近 O(n)；冒泡和选择不管数据如何都要比满 n² 次。',
+        },
+        {
+          question: '快速排序的平均和最坏时间复杂度分别是？',
+          answer: '平均 O(n log n)，最坏 O(n²)（如每次划分都极不均匀，随机选基准可规避）',
+          explanation: '分而治之每层 O(n)、平均 log n 层；已排序数组配固定基准是最坏情形的典型。',
+        },
+        {
+          question: '二分查找中 mid = left + (right - left) / 2 比 (left + right) / 2 好在哪？',
+          answer: '避免 left + right 整数溢出（left、right 都很大时和可能超过 int 上限）',
+          explanation: '这是经典面试点；数学上等价，但工程上后者在极端数据下会算出负数下标。',
+        },
+      ],
+    },
+    {
+      id: 'c-ch12',
+      title: '第 12 章 递归与分治',
+      intro: '递归是"自己调用自己"的艺术，分治是"大问题拆小问题"的战略。本章从阶乘、斐波那契到汉诺塔、全排列，建立递归思维，并学会用记忆化消灭重复计算。',
+      sections: [
+        {
+          title: '12.1 递归思维入门',
+          content: [
+            '`递归`两要素：基例（最简单情形直接给答案）+ 递推（把问题缩小一号再调用自己）。缺基例就是无限递归。',
+            '信任原则：写递归时"相信子调用能完成小一号的问题"，不要在脑子里逐层展开——那叫人肉栈溢出。',
+            '调用过程是先"递"（层层深入）后"归"（层层返回），f(3) 没算完时 f(2)、f(1) 都挂在栈上等它。',
+            '每次递归消耗一个栈帧，深度过大（十几万层）会栈溢出——C 的默认栈通常只有 1~8MB。',
+          ],
+          code: {
+            lang: 'c',
+            caption: '阶乘与打印递归过程',
+            source: `int factorial(int n) {
+    if (n <= 1) return 1;          // 基例
+    return n * factorial(n - 1);   // 递推：n! = n × (n-1)!
+}
+
+// 观察"递"与"归"
+void countdown(int n) {
+    if (n == 0) return;
+    printf("递 %d\\n", n);   // 深入前打印：3 2 1
+    countdown(n - 1);
+    printf("归 %d\\n", n);   // 返回时打印：1 2 3
+}`,
+          },
+        },
+        {
+          title: '12.2 斐波那契与记忆化',
+          content: [
+            '朴素递归 fib(n) = fib(n-1) + fib(n-2) 有大量重复计算：fib(40) 要算上亿次，慢到肉眼可见。',
+            '`记忆化`：用数组缓存算过的结果，算过就直接取——时间从指数降到 O(n)，空间换时间的典范。',
+            '自顶向下记忆化（递归+缓存）与自底向上递推（循环填表）是动态规划的两种写法，后者更省栈。',
+            '尾递归概念：递归调用是函数最后一步时，编译器可优化成循环不耗栈——但 C 标准不保证，别依赖。',
+          ],
+          code: {
+            lang: 'c',
+            caption: '记忆化与递推两种写法',
+            source: `long long memo[100] = {0};
+
+long long fibMemo(int n) {           // 记忆化递归
+    if (n <= 1) return n;
+    if (memo[n]) return memo[n];     // 算过就取
+    return memo[n] = fibMemo(n-1) + fibMemo(n-2);
+}
+
+long long fibIter(int n) {           // 递推填表
+    long long a = 0, b = 1;
+    for (int i = 0; i < n; i++) {
+        long long t = a + b; a = b; b = t;
+    }
+    return a;
+}   // 都只算 n 次，天壤之别`,
+          },
+        },
+        {
+          title: '12.3 分治经典：汉诺塔与全排列',
+          content: [
+            '`分治`三步：分解（拆成同类小问题）→ 解决（递归处理）→ 合并（拼出答案）。快排、归并、二分都是分治。',
+            '汉诺塔：n 个盘子 A→C，借助 B。递归定义：把上面 n-1 个移到 B，最大盘移到 C，再把 n-1 个从 B 移到 C。三行代码解决古老难题。',
+            '全排列：每个位置轮流和后面的元素交换，递归到末位输出，换回（回溯）——"选一条路走到底，不行就退回来换条路"。',
+            '回溯法本质是搜索树剪枝：八皇后、数独、迷宫寻路都是同一套框架。',
+          ],
+          code: {
+            lang: 'c',
+            caption: '汉诺塔三行递归',
+            source: `void hanoi(int n, char from, char aux, char to) {
+    if (n == 1) {
+        printf("%c -> %c\\n", from, to);
+        return;
+    }
+    hanoi(n - 1, from, to, aux);   // n-1 个移到辅助柱
+    printf("%c -> %c\\n", from, to); // 最大盘一步到位
+    hanoi(n - 1, aux, from, to);   // n-1 个挪回来
+}
+
+// hanoi(3, 'A', 'B', 'C') 输出 7 步（2³-1）`,
+          },
+        },
+      ],
+      quiz: [
+        {
+          question: '递归函数缺少基例（终止条件）会导致？',
+          options: ['A. 编译错误', 'B. 无限递归直至栈溢出崩溃', 'C. 返回随机值', 'D. 自动停止'],
+          answer: 'B',
+          explanation: '每次调用压一个栈帧，没有出口就无限压栈，最终 stack overflow。基例是递归的生命线。',
+        },
+        {
+          question: '记忆化把斐波那契递归从指数级降到线性级的原理是？',
+          answer: '用数组缓存已算结果，每个 fib(k) 只真正计算一次，重复子问题直接查表',
+          explanation: '朴素递归的调用树含海量重复子树；记忆化剪掉所有重复分支，也叫"自顶向下 DP"。',
+        },
+        {
+          question: '汉诺塔 hanoi(n) 的移动次数是多少？',
+          answer: '2ⁿ - 1 次（递推 T(n) = 2T(n-1) + 1）',
+          explanation: 'n-1 个盘子移两次（移走再移回）加最大盘一次；n=64 时约 1.8×10¹⁹ 次，这就是"世界末日"传说。',
+        },
+      ],
+    },
+    {
+      id: 'c-ch13',
+      title: '第 13 章 栈与队列的数组实现',
+      intro: '栈和队列是操作受限的线性表，用数组就能漂亮实现。本章手写两种结构，并完成括号匹配、表达式求值雏形两个经典应用。',
+      sections: [
+        {
+          title: '13.1 数组实现栈',
+          content: [
+            '`栈`只需一个数组 + 一个 top 指针：push 时 arr[top++] = x，pop 时 return arr[--top]。先加后存还是先存后加，决定了 top 的含义，全篇要统一。',
+            '上溢与下溢：top 超过容量叫栈溢出（写入越界！），空栈 pop 叫下溢——两个都必须检查。',
+            '栈的应用全景：函数调用栈、括号匹配、表达式求值、DFS 的非递归写法、浏览器后退。',
+            '数组栈容量固定是局限；需要动态就用链表实现或 realloc 扩容。',
+          ],
+          code: {
+            lang: 'c',
+            caption: '一个完整的数组栈',
+            source: `#define MAXN 100
+typedef struct {
+    int data[MAXN];
+    int top;              // 栈顶下标 + 1（即元素个数）
+} Stack;
+
+void init(Stack *s) { s->top = 0; }
+int isEmpty(Stack *s) { return s->top == 0; }
+int isFull(Stack *s)  { return s->top == MAXN; }
+
+int push(Stack *s, int x) {
+    if (isFull(s)) return 0;      // 上溢保护
+    s->data[s->top++] = x;
+    return 1;
+}
+int pop(Stack *s, int *out) {
+    if (isEmpty(s)) return 0;     // 下溢保护
+    *out = s->data[--s->top];
+    return 1;
+}`,
+          },
+        },
+        {
+          title: '13.2 循环队列',
+          content: [
+            '`队列`数组实现的麻烦：队头出队后前面空出浪费。`循环队列`用取模让下标"绕圈"：rear = (rear + 1) % MAXN。',
+            '判空 front == rear；判满的经典方案是牺牲一格：(rear + 1) % MAXN == front，这样空满才不会混淆。',
+            '入队：data[rear] = x; rear = (rear+1)%MAXN。出队：front = (front+1)%MAXN。',
+            '应用：任务队列、消息缓冲、BFS 层序遍历、生产者-消费者缓冲。',
+          ],
+          code: {
+            lang: 'c',
+            caption: '循环队列完整实现',
+            source: `#define MAXQ 5   // 实际容量 MAXQ-1（牺牲一格）
+typedef struct {
+    int data[MAXQ];
+    int front, rear;
+} Queue;
+
+void qinit(Queue *q) { q->front = q->rear = 0; }
+int qempty(Queue *q) { return q->front == q->rear; }
+int qfull(Queue *q)  { return (q->rear + 1) % MAXQ == q->front; }
+
+int enqueue(Queue *q, int x) {
+    if (qfull(q)) return 0;
+    q->data[q->rear] = x;
+    q->rear = (q->rear + 1) % MAXQ;
+    return 1;
+}
+int dequeue(Queue *q, int *out) {
+    if (qempty(q)) return 0;
+    *out = q->data[q->front];
+    q->front = (q->front + 1) % MAXQ;
+    return 1;
+}`,
+          },
+        },
+        {
+          title: '13.3 应用：括号匹配与后缀表达式',
+          content: [
+            '括号匹配：遇左括号入栈，遇右括号弹栈比对，扫描完栈空才合法——栈的经典应用第一名。',
+            '`后缀表达式`（逆波兰式）不用括号不用优先级：3 4 + 5 × 表示 (3+4)×5。计算机求值最爱它。',
+            '后缀求值算法：数字入栈；遇运算符弹出两个数运算，结果压回；最后栈里只剩答案。',
+            '中缀转后缀用"调度场算法"（也是栈），编译器就是这么处理你的表达式的。',
+          ],
+          code: {
+            lang: 'c',
+            caption: '后缀表达式求值',
+            source: `// 计算 "3 4 + 5 *" = 35
+int evalPostfix(const char *s) {
+    Stack st; init(&st);
+    for (int i = 0; s[i]; i++) {
+        char c = s[i];
+        if (c >= '0' && c <= '9') push(&st, c - '0');
+        else if (c == '+' || c == '-' || c == '*') {
+            int b, a;
+            pop(&st, &b); pop(&st, &a);   // 先弹的是右操作数
+            int r = c == '+' ? a + b : c == '-' ? a - b : a * b;
+            push(&st, r);
+        }
+    }
+    int ans; pop(&st, &ans);
+    return ans;
+}`,
+          },
+        },
+      ],
+      quiz: [
+        {
+          question: '循环队列为什么要"牺牲一格"来区分空和满？',
+          options: ['A. 节省内存', 'B. 否则 front==rear 既表示空又表示满，无法区分', 'C. 取模运算需要', 'D. 提高速度'],
+          answer: 'B',
+          explanation: '入队出队都移动 rear/front，满时 rear 也会追上 front。空出一格后，(rear+1)%MAXN==front 专属于满，判空判满不再撞车。',
+        },
+        {
+          question: '后缀表达式 "3 4 + 5 *" 求值时，遇到 * 号弹出的两个操作数顺序是？',
+          answer: '先弹出的是右操作数（5），后弹出的是左操作数（7，即 3+4 的结果），计算 7 * 5 = 35',
+          explanation: '栈是后进先出，所以先弹右操作数；减法和除法顺序弄反结果就错了。',
+        },
+        {
+          question: '数组栈 push 前必须检查什么？pop 前呢？',
+          answer: 'push 前检查栈满（上溢会写入越界）；pop 前检查栈空（下溢会读到垃圾数据）',
+          explanation: '两种溢出都是数组栈的真实风险，实现时通过返回值或断言明确拒绝。',
+        },
+      ],
+    },
+    {
+      id: 'c-ch14',
+      title: '第 14 章 链表进阶',
+      intro: '链表是 C 语言的期中考试：指针、malloc、结构体三位一体。本章完成带头结点的单链表全套操作（增删查改+反转），并认识双向链表与循环链表。',
+      sections: [
+        {
+          title: '14.1 带头结点的链表全套操作',
+          content: [
+            '`头结点`是数据域不存东西的"哨兵"节点，让"在头部插入"和"删除第一个节点"不再需要特殊处理——代码立刻干净一半。',
+            '插入：new->next = prev->next; prev->next = new;——两句顺序不能反，否则链条断裂丢失后半段。',
+            '删除：prev->next = target->next; free(target);——先绕过再释放，顺序同样不能反。',
+            '遍历模板：for (Node *p = head->next; p != NULL; p = p->next)，从头结点的下一个开始。',
+          ],
+          code: {
+            lang: 'c',
+            caption: '带头结点链表的插入与删除',
+            source: `typedef struct Node {
+    int data;
+    struct Node *next;
+} Node;
+
+// 在 prev 之后插入值 x
+void insertAfter(Node *prev, int x) {
+    Node *node = malloc(sizeof(Node));
+    node->data = x;
+    node->next = prev->next;   // 先接后面
+    prev->next = node;         // 再接前面
+}
+
+// 删除 prev 之后的节点
+void deleteAfter(Node *prev) {
+    if (!prev->next) return;
+    Node *victim = prev->next;
+    prev->next = victim->next; // 先绕过
+    free(victim);              // 再释放
+}`,
+          },
+        },
+        {
+          title: '14.2 链表反转与快慢指针',
+          content: [
+            '迭代反转三指针：prev、cur、nxt。每轮 cur->next = prev 完成一格翻转，三指针齐步前进，最后 prev 是新头。',
+            '`快慢指针`：快指针走两步、慢指针走一步。找中点（快到时慢在中点）、判环（有环则必相遇）、找倒数第 k 个（快先走 k 步）。',
+            '递归反转也很好背：反转后面的，再把头接回来——return 新头，旧头变尾指向 NULL。',
+            '这些题的价值不在背代码，而在训练"指针操作前画图"的习惯。',
+          ],
+          code: {
+            lang: 'c',
+            caption: '反转 + 判环',
+            source: `Node* reverse(Node *head) {
+    Node *prev = NULL, *cur = head;
+    while (cur) {
+        Node *nxt = cur->next;
+        cur->next = prev;
+        prev = cur;
+        cur = nxt;
+    }
+    return prev;
+}
+
+int hasCycle(Node *head) {     // 快慢指针判环
+    Node *slow = head, *fast = head;
+    while (fast && fast->next) {
+        slow = slow->next;
+        fast = fast->next->next;
+        if (slow == fast) return 1;  // 相遇即有环
+    }
+    return 0;
+}`,
+          },
+        },
+        {
+          title: '14.3 双向链表与循环链表',
+          content: [
+            '`双向链表`每个节点有 prev 和 next 两个指针：可以双向遍历、O(1) 删除已知节点，代价是多一倍指针域和更繁琐的维护。',
+            '`循环链表`尾节点的 next 指回头结点：从任意节点出发能遍历全表，约瑟夫环问题的天然模型。',
+            '约瑟夫问题：n 人围圈报数到 m 出局——用循环链表模拟，每次数 m 个节点删除一个，直到剩一人。',
+            '工程建议：真实项目用成熟容器库；手写链表的价值全在理解与面试。',
+          ],
+          code: {
+            lang: 'c',
+            caption: '循环链表解约瑟夫问题',
+            source: `// n 人围圈，报数到 m 出局，求最后幸存者
+int josephus(int n, int m) {
+    // 建循环链表 1..n
+    Node *head = malloc(sizeof(Node));
+    head->data = 1; head->next = head;
+    Node *tail = head;
+    for (int i = 2; i <= n; i++) {
+        Node *p = malloc(sizeof(Node));
+        p->data = i; p->next = head;
+        tail->next = p; tail = p;
+    }
+    // 模拟出局
+    Node *cur = head;
+    while (cur->next != cur) {       // 只剩一个时停
+        for (int i = 1; i < m - 1; i++) cur = cur->next;
+        deleteAfter(cur);            // 报数到 m 的出局
+        cur = cur->next;
+    }
+    int ans = cur->data;
+    free(cur);
+    return ans;
+}`,
+          },
+        },
+      ],
+      quiz: [
+        {
+          question: '带头结点的链表最大好处是？',
+          options: ['A. 节省内存', 'B. 头部插入和删除首节点不再需要特判', 'C. 遍历更快', 'D. 可以双向遍历'],
+          answer: 'B',
+          explanation: '哨兵头结点让所有位置的操作路径统一，消除了"第一个元素特殊"的边界分支。',
+        },
+        {
+          question: '快慢指针能判断链表有环的原理是？',
+          answer: '有环则快指针必在环内追上慢指针（每轮距离缩小 1）；无环则快指针先走到 NULL',
+          explanation: '相对速度为 1 的追及问题：环内距离有限，距离每轮减 1，必然相遇。',
+        },
+        {
+          question: '双向链表相比单向链表，用空间换来的核心能力是？',
+          answer: 'O(1) 时间删除已知节点和反向遍历（单链表删除已知节点需先 O(n) 找前驱）',
+          explanation: '每个节点多一个 prev 指针，换来双向移动能力；维护时每次增删要同步更新两组指针。',
+        },
+      ],
+    },
+    {
+      id: 'c-ch15',
+      title: '第 15 章 综合项目：学生成绩管理系统',
+      intro: '收官之作：结构体数组 + 文件读写 + 排序 + 菜单循环，把 C 语言全部知识点装进一个能存档、能查询的成绩管理系统。这就是你独立完成的第一个"软件"。',
+      sections: [
+        {
+          title: '15.1 架构设计与数据模型',
+          content: [
+            '先设计再编码：结构体 Student 存学号、姓名、成绩；数组 students[MAXN] + count 计数管理全部数据。',
+            '功能清单：增、删、改、查（按学号/姓名）、按成绩排序、统计（平均分/最高最低）、存档、读档。',
+            '分层思想：数据层（load/save 文件）、逻辑层（各功能函数）、界面层（菜单循环）——函数间靠参数传数据，不用全局变量。',
+            '文件格式用纯文本：每行"学号 姓名 成绩"，fprintf/fscanf 直接读写，简单可靠。',
+          ],
+          code: {
+            lang: 'c',
+            caption: '数据模型与存档',
+            source: `#define MAXN 100
+typedef struct {
+    int id;
+    char name[32];
+    float score;
+} Student;
+
+int save(Student st[], int n, const char *path) {
+    FILE *fp = fopen(path, "w");
+    if (!fp) return 0;
+    for (int i = 0; i < n; i++)
+        fprintf(fp, "%d %s %.1f\\n", st[i].id, st[i].name, st[i].score);
+    fclose(fp);
+    return 1;
+}
+
+int load(Student st[], const char *path) {
+    FILE *fp = fopen(path, "r");
+    if (!fp) return 0;              // 首次运行没有存档
+    int n = 0;
+    while (n < MAXN &&
+           fscanf(fp, "%d %31s %f", &st[n].id, st[n].name, &st[n].score) == 3)
+        n++;
+    fclose(fp);
+    return n;
+}`,
+          },
+        },
+        {
+          title: '15.2 核心功能实现',
+          content: [
+            '查找：按学号线性查找返回下标，找不到返回 -1——所有功能（删/改/查）都复用它。',
+            '删除：找到后把后面的元素整体前移一格，count--。数组删除的通用套路。',
+            '排序：qsort + 比较函数按成绩降序，三十行手写排序的活一行解决。',
+            '统计：一遍循环同时算总分、最高、最低——"一趟扫描多指标"是基本功。',
+          ],
+          code: {
+            lang: 'c',
+            caption: '查找、删除与排序',
+            source: `int findById(Student st[], int n, int id) {
+    for (int i = 0; i < n; i++)
+        if (st[i].id == id) return i;
+    return -1;
+}
+
+void deleteAt(Student st[], int *n, int idx) {
+    for (int i = idx; i < *n - 1; i++)
+        st[i] = st[i + 1];       // 整体前移
+    (*n)--;
+}
+
+int cmpScoreDesc(const void *a, const void *b) {
+    float d = ((const Student*)b)->score - ((const Student*)a)->score;
+    return (d > 0) - (d < 0);    // 安全比较浮点，避免截断
+}
+// 使用：qsort(st, n, sizeof(Student), cmpScoreDesc);`,
+          },
+        },
+        {
+          title: '15.3 菜单组装与完善方向',
+          content: [
+            '菜单循环：打印选项 → 读选择 → switch 分发到功能函数 → 循环直到选 0 退出。',
+            '输入保护：scanf 返回值检查 + 清空缓冲区残留，防止一次非法输入让程序死循环。',
+            '退出前自动 save，启动时自动 load——用户无感的持久化最优雅。',
+            '完善方向：链表替代定长数组、成绩分科目、导出排名表、密码保护——每一项都是新练习。',
+          ],
+          code: {
+            lang: 'c',
+            caption: '菜单主循环',
+            source: `int main() {
+    Student st[MAXN];
+    int n = load(st, "students.txt");
+    int choice;
+    while (1) {
+        printf("\\n1.添加 2.删除 3.查询 4.排序 5.统计 0.退出\\n> ");
+        if (scanf("%d", &choice) != 1) {          // 非法输入保护
+            while (getchar() != '\\n');            // 清空缓冲区
+            continue;
+        }
+        if (choice == 0) break;
+        switch (choice) {
+            case 1: /* addStudent(...) */ break;
+            case 2: /* deleteStudent(...) */ break;
+            /* ... */
+        }
+    }
+    save(st, n, "students.txt");   // 退出自动存档
+    printf("数据已保存，再见！\\n");
+    return 0;
+}`,
+          },
+        },
+      ],
+      quiz: [
+        {
+          question: '数组中删除第 idx 个元素的正确操作是？',
+          options: ['A. st[idx] = 0', 'B. 把 idx 之后的元素整体前移一格，计数减一', 'C. free(st + idx)', 'D. st[idx] = st[n-1] 即可'],
+          answer: 'B',
+          explanation: '数组元素连续存储，删除靠前移覆盖。置 0 会留"假数据"；free 只用于堆内存。',
+        },
+        {
+          question: 'scanf("%d", &choice) 用户输入了字母，会发生什么？如何处理？',
+          answer: 'scanf 返回 0（读不到整数），字母留在缓冲区导致下次还读到它（死循环）；应检查返回值并用 getchar 清空缓冲区',
+          explanation: 'while (getchar() != \'\\n\'); 吃掉残留输入，是控制台程序的保命套路。',
+        },
+        {
+          question: '本项目体现的分层结构是？各层职责？',
+          answer: '数据层（load/save 负责文件）、逻辑层（增删改查排统计）、界面层（菜单循环分发）',
+          explanation: '分层后换存储（如改数据库）只动数据层，换界面（如改图形界面）只动界面层，逻辑层复用。',
+        },
+      ],
+    },
   ],
   patterns: [
     {

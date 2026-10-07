@@ -896,4 +896,566 @@ export const annotations: Record<string, TermNote[][]> = {
       { term: 'setTimeout / setInterval', def: '延时执行一次 / 周期重复执行，配 clearTimeout/clearInterval 停止。倒计时、轮播的基础。' },
     ],
   ],
+  // ============ 扩充章节（每语言 15 章计划） ============
+  'java-ch11': [
+    [
+      { term: 'Lambda', def: '匿名函数简写 (参数) -> { 代码 }，让函数可以像值一样传递，Java 8 引入。' },
+      { term: '函数式接口', def: '只含一个抽象方法的接口（如 Runnable、Comparator），Lambda 的合法目标类型。' },
+      { term: '@FunctionalInterface', def: '标注函数式接口的注解，让编译器帮忙检查"只有一个抽象方法"。' },
+    ],
+    [
+      { term: '方法引用', def: 'Lambda 的极简形式：System.out::println 等价 x -> System.out.println(x)，用 :: 连接。' },
+      { term: '构造引用', def: 'ArrayList::new 这样的写法，把构造方法当函数传递。' },
+      { term: '静态方法引用', def: 'Math::max 形式，等价于 (a,b) -> Math.max(a,b)。' },
+    ],
+    [
+      { term: 'Stream', def: '集合的流水线抽象：数据源 → 中间操作 → 终端操作，不存数据、不改原集合。' },
+      { term: '中间操作 / 终端操作', def: 'filter/map/sorted 是中间操作（懒执行，返回新流）；collect/forEach 是终端操作（触发整条流水线）。' },
+      { term: 'Collectors', def: '收集器工厂：toList() 收成列表、joining(",") 拼字符串、groupingBy 分组。' },
+    ],
+  ],
+  'java-ch12': [
+    [
+      { term: '线程', def: '程序执行的最小单位，同一进程内多线程共享内存、并发执行。' },
+      { term: 'start 与 run', def: 'start() 才真正创建新线程并异步调 run()；直接调 run() 只是普通方法调用。' },
+      { term: 'Runnable', def: '只有 run() 一个方法的函数式接口，描述"要执行的任务"，与线程本体分离。' },
+    ],
+    [
+      { term: '线程安全', def: '多线程并发读写共享数据时结果仍正确的性质；count++ 这类复合操作是重灾区。' },
+      { term: 'synchronized', def: '内置锁：同一时刻只允许一个线程进入被保护的代码块/方法。' },
+      { term: '原子操作', def: '不可再分的一步操作（如 AtomicInteger.incrementAndGet），天然线程安全。' },
+    ],
+    [
+      { term: 'sleep / join', def: 'sleep 让当前线程暂停指定毫秒；join 等另一个线程跑完再继续。' },
+      { term: 'interrupt', def: '"礼貌叫停"机制：只设中断标志，线程自己检查并退出；过时的 stop() 强杀已废弃。' },
+      { term: '线程池', def: '复用固定数量线程执行任务的池子（ExecutorService），避免反复创建销毁线程的开销。' },
+    ],
+  ],
+  'java-ch13': [
+    [
+      { term: '正则表达式', def: '用符号描述文本模式的迷你语言：\\d 数字、\\w 单词字符、* 零到多次、+ 一到多次。' },
+      { term: '贪婪与懒惰', def: '量词默认贪婪（能多吃就多吃）；后面加 ? 变懒惰（能少吃就少吃），如 .*?。' },
+      { term: '捕获组', def: '括号 () 圈住的部分会被记住，之后可用 $1、group(1) 引用其内容。' },
+    ],
+    [
+      { term: 'matches', def: 'String.matches(regex) 要求整个字符串完全符合模式，常用于校验。' },
+      { term: 'split 按正则切分', def: '"a, b;c".split("[,;]\\\\s*") 一次按多个分隔符切开。' },
+      { term: 'replaceAll 与 $1', def: '按正则替换，替换串里 $1 引用第一个捕获组，可重排内容。' },
+    ],
+    [
+      { term: 'Pattern', def: '编译好的正则对象：Pattern.compile() 一次编译反复使用，比每次现编译快。' },
+      { term: 'Matcher', def: '匹配器：find() 循环找下一个匹配，group() 取出内容，group(1) 取第一组。' },
+      { term: 'matches vs find', def: 'matches 整串匹配（校验用）；find 串中寻找片段（提取用）。' },
+    ],
+  ],
+  'java-ch14': [
+    [
+      { term: 'var', def: '局部变量类型推断（Java 10+）：编译器按右边表达式确定类型，静态类型不变。' },
+      { term: '类型推断', def: '编译器根据上下文自动算出类型的机制，var 推断后类型固定不可再变。' },
+      { term: 'Diamond 运算符', def: 'new ArrayList<>() 中的 <> 也是推断，比 var 更早（Java 7）。' },
+    ],
+    [
+      { term: 'record', def: '记录类（Java 16+）：一行定义不可变数据类，自动生成构造、getter、equals、hashCode、toString。' },
+      { term: '不可变对象', def: '创建后状态不能改的对象（字段全 final、无 setter），天然线程安全。' },
+      { term: 'POJO / DTO', def: '纯数据对象 / 数据传输对象：只有字段没有业务逻辑的类，record 的最佳场景。' },
+    ],
+    [
+      { term: 'switch 表达式', def: '箭头语法 case 1 -> "一" 不穿透；switch 可整体当表达式返回值，块内用 yield 返回。' },
+      { term: '文本块', def: '""" 包裹的多行字符串（Java 15+），写 SQL/JSON 不再需要转义和拼接。' },
+      { term: '模式匹配 instanceof', def: 'if (o instanceof String s) 判断+强转一步完成，变量 s 直接使用。' },
+    ],
+  ],
+  'java-ch15': [
+    [
+      { term: '单例模式', def: '保证全程序只有一个实例的模式：私有构造 + 静态方法发放唯一实例。' },
+      { term: '饿汉式 / 懒汉式', def: '饿汉：类加载即创建（简单）；懒汉：用时才建（省资源但要处理线程安全）。' },
+      { term: '双重检查锁', def: '懒汉式的线程安全优化：两次判空夹一次加锁，兼顾性能与安全。' },
+    ],
+    [
+      { term: '工厂模式', def: '把对象创建集中到工厂方法，调用方只要"要什么"不管"怎么 new"。' },
+      { term: '开闭原则', def: '对扩展开放、对修改关闭：新增产品不改老代码，加分支进工厂即可。' },
+      { term: '解耦', def: '降低模块间直接依赖。工厂让调用方不认识具体类，只认接口。' },
+    ],
+    [
+      { term: '观察者模式', def: '一对多的订阅通知：主题状态一变，所有订阅者自动收到 update。' },
+      { term: 'Subject / Observer', def: '被观察者维护订阅列表并负责通知；观察者实现 update 接收通知。' },
+      { term: '事件驱动', def: '观察者模式的应用形态：按钮点击、消息队列、数据绑定皆由此派生。' },
+    ],
+  ],
+  'py-ch9': [
+    [
+      { term: '可迭代对象', def: '实现了 __iter__() 的对象（列表、字符串、文件……），可以被 for 遍历。' },
+      { term: '迭代器', def: 'iter() 的产物：next() 逐个取值，取完抛 StopIteration，只能完整走一遍。' },
+      { term: 'StopIteration', def: '迭代结束的"暗号"：for 循环捕获它后正常退出，不当作错误。' },
+    ],
+    [
+      { term: 'yield', def: '生成器关键字：交出一个值并暂停函数，下次 next() 从暂停处继续。' },
+      { term: '生成器', def: '含 yield 的函数调用后返回的惰性迭代器：现用现算，常数内存。' },
+      { term: '惰性求值', def: '需要时才计算的策略。生成器表达式 (x for x in ...) 不立即产生任何数据。' },
+    ],
+    [
+      { term: '生成器管道', def: '多个生成器首尾相接：读→过滤→转换，数据逐条流过、不落盘不占内存。' },
+      { term: '内存恒定', def: '生成器任意时刻只持有当前元素，处理百 G 文件内存也不增长。' },
+      { term: '一次性消费', def: '生成器遍历完就空了，再次遍历得到空——需要复用就请转 list。' },
+    ],
+  ],
+  'py-ch10': [
+    [
+      { term: '一等公民', def: '函数可以赋值、传参、当返回值——和数字字符串地位相等，这是装饰器的前提。' },
+      { term: '闭包', def: '内层函数记住外层作用域变量的现象，装饰器的包装函数就靠它记住原函数。' },
+      { term: '函数对象', def: '不带括号的函数名是对象本身；带括号才是调用。f = print 后 f("hi") 可用。' },
+    ],
+    [
+      { term: '装饰器', def: '接收函数、返回新函数的函数；@deco 等价于 f = deco(f)，是语法糖。' },
+      { term: '*args, **kwargs', def: '万能参数收集：任意位置参数打包成元组、关键字参数打包成字典，装饰器透传必备。' },
+      { term: 'functools.wraps', def: '把原函数的名字和文档复制给包装函数的装饰器，写装饰器必加。' },
+    ],
+    [
+      { term: '带参装饰器', def: '@repeat(3) 需要先调 repeat(3) 得到装饰器，所以比普通装饰器多嵌套一层函数。' },
+      { term: 'lru_cache', def: '标准库缓存装饰器：记住算过的结果，递归 fib 加它立刻从指数变线性。' },
+      { term: '装饰器叠加顺序', def: '@a @b def f 等价 f = a(b(f))：离函数最近的装饰器先生效（从下往上包）。' },
+    ],
+  ],
+  'py-ch11': [
+    [
+      { term: '原始字符串', def: 'r"\\d+" 前缀 r 让反斜杠不转义，写正则的推荐姿势，避免双重转义。' },
+      { term: '字符类与量词', def: '\\d \\w \\s [abc] 描述"什么字符"；* + ? {n,m} 描述"来几次"。' },
+      { term: '锚点', def: '^ 开头、$ 结尾、\\b 单词边界——它们不占字符，只声明位置。' },
+    ],
+    [
+      { term: 'match / search / fullmatch', def: '开头匹配 / 全文找第一个 / 整串匹配。校验用 fullmatch，提取用 search 或 findall。' },
+      { term: 'findall', def: '返回所有匹配组成的列表；模式含分组时返回各组内容。' },
+      { term: 're.sub', def: '正则替换：re.sub(r"\\d", "*", s) 打码；替换串中 \\1 引用捕获组。' },
+    ],
+    [
+      { term: 're.compile', def: '预编译模式对象，同一正则反复用时省去每次解析，循环中提速明显。' },
+      { term: '贪婪陷阱', def: '<.+> 会吞到最后一对标签；改 <.+?> 懒惰匹配逐对提取。' },
+      { term: 're.S (DOTALL)', def: '让 . 也匹配换行符的标志，跨行匹配时必加。' },
+    ],
+  ],
+  'py-ch12': [
+    [
+      { term: 'HTTP 请求', def: '浏览器/爬虫与网站对话的方式：GET 取数据、POST 提交数据。' },
+      { term: '状态码', def: '200 成功、301/302 跳转、403 拒绝、404 不存在、500 服务器错误。' },
+      { term: 'User-Agent', def: '标识客户端身份的请求头，爬虫带上它伪装浏览器，否则易被 403。' },
+    ],
+    [
+      { term: 'BeautifulSoup', def: '把 HTML 源码解析成可查询节点树的第三方库：find/find_all/select 三大查找。' },
+      { term: 'CSS 选择器', def: 'soup.select(".post a") 用 .class、#id、空格后代等规则精准定位元素。' },
+      { term: 'tag.text 与 tag["href"]', def: '取标签内纯文本 / 取标签属性值，提取数据的两把钳子。' },
+    ],
+    [
+      { term: 'robots.txt', def: '网站根目录下的爬虫告示牌，声明哪些路径不欢迎抓取，请尊重。' },
+      { term: '频率控制', def: '请求间 time.sleep(1) 以上，高频抓取会给服务器造成压力甚至构成攻击。' },
+      { term: '动态渲染', def: '数据由 JS 运行时生成，requests 拿不到；需 Selenium 或直接请求数据接口。' },
+    ],
+  ],
+  'py-ch13': [
+    [
+      { term: 'super()', def: '调用父类方法的通道：子类构造里 super().__init__(...) 把父类部分交给父类初始化。' },
+      { term: 'MRO', def: '方法解析顺序：多继承时同名方法的查找顺序，C.__mro__ 可查看。' },
+      { term: 'isinstance / issubclass', def: '判断对象是不是某类（含子类）实例 / 判断类间继承关系。' },
+    ],
+    [
+      { term: '@classmethod', def: '类方法：首参是 cls 而非 self，常用于"另一种构造方式"（如 from_diameter）。' },
+      { term: '@staticmethod', def: '静态方法：无 self/cls，挂在类名下的普通工具函数。' },
+      { term: '@property', def: '把方法伪装成属性：c.area 不加括号即可调用；配 setter 可加校验。' },
+    ],
+    [
+      { term: '鸭子类型', def: '"走像鸭子就是鸭子"：只看对象有没有所需方法，不看继承关系。' },
+      { term: '抽象基类（ABC）', def: 'abc 模块提供正式契约：@abstractmethod 标记的方法子类必须实现。' },
+      { term: '@abstractmethod', def: '抽象方法标记：含它的类不能直接实例化，强迫子类补全实现。' },
+    ],
+  ],
+  'py-ch14': [
+    [
+      { term: 'assert 断言', def: 'assert 条件, "提示"：条件不成立立刻抛 AssertionError，把 bug 拦在源头附近。' },
+      { term: '防御式编程', def: '先校验再动手：入口检查参数合法性，异常数据不进入核心逻辑。' },
+      { term: '-O 优化模式', def: 'python -O 运行时所有 assert 被移除——正式校验请用 if + raise。' },
+    ],
+    [
+      { term: '单元测试', def: '针对最小功能单元的自动化测试：写一次永久生效，改代码跑一遍防回归。' },
+      { term: 'TestCase', def: 'unittest 的测试基类：test_ 开头的方法自动识别为用例。' },
+      { term: 'setUp / tearDown', def: '每个测试前/后自动执行的钩子，用于准备和清理公共环境。' },
+    ],
+    [
+      { term: 'pdb / breakpoint()', def: '内置断点调试器：代码插 breakpoint()，运行到即暂停，n 单步、c 继续、p 查变量。' },
+      { term: 'logging', def: '正式日志模块：分级（DEBUG→ERROR）、可开关、可写文件，print 的职场替代。' },
+      { term: '二分定位法', def: '注释一半代码看 bug 是否还在，逐次缩小包围圈——高效调试心法。' },
+    ],
+  ],
+  'py-ch15': [
+    [
+      { term: '持久化', def: '把内存数据写入文件/数据库，程序关掉数据还在。本项目用 JSON 文件实现。' },
+      { term: '数据模型设计', def: '先定数据结构再写功能：{姓名: {phone: ...}} 的字典嵌套让查找 O(1)。' },
+      { term: '单一职责', def: '一个函数只干一件事：add/delete/search 各自独立，菜单只负责分发。' },
+    ],
+    [
+      { term: 'pop(name, None)', def: '带默认值的删除：键不存在返回 None 而不抛 KeyError，删除场景的优雅写法。' },
+      { term: '模糊匹配', def: 'keyword in name 的子串判断实现搜索，比精确匹配更贴合用户习惯。' },
+      { term: '即时存档', def: '每次修改后立即写盘，崩溃也不丢数据——用写盘频率换数据安全。' },
+    ],
+    [
+      { term: '输入校验', def: '用正则和判空挡掉非法输入，脏数据永远不进数据层。' },
+      { term: '异常兜底', def: '菜单循环整体包 try/except：单条命令出错不拖垮整个程序。' },
+      { term: '三层架构', def: '数据层（文件）/ 逻辑层（功能函数）/ 界面层（菜单），放大就是真实软件结构。' },
+    ],
+  ],
+  'cpp-ch9': [
+    [
+      { term: 'RAII', def: '资源获取即初始化：资源生命周期绑定对象生命周期，析构时自动释放。' },
+      { term: '栈展开', def: '抛异常时逐层退出函数并调用局部对象析构的过程——RAII 在异常下仍可靠的原因。' },
+      { term: '析构函数', def: '~类名()，对象销毁时自动执行，是 RAII 释放资源的落脚点。' },
+    ],
+    [
+      { term: 'unique_ptr', def: '独占式智能指针：离开作用域自动 delete，不可复制只能 move，零开销。' },
+      { term: 'make_unique', def: '创建 unique_ptr 的工厂函数，比裸 new 更安全简洁。' },
+      { term: '所有权转移', def: 'std::move(p) 把资源所有权转给新指针，原指针置空。' },
+    ],
+    [
+      { term: 'shared_ptr', def: '共享式智能指针：引用计数归零才释放，适合多个所有者的场景。' },
+      { term: '引用计数', def: '记录有多少个 shared_ptr 指向同一对象，最后一个销毁时释放内存。' },
+      { term: 'weak_ptr', def: '弱引用：不计数、可观察，lock() 临时升级为 shared_ptr，破解循环引用。' },
+    ],
+  ],
+  'cpp-ch10': [
+    [
+      { term: '函数模板', def: 'template <typename T> 定义的"代码配方"：编译器按实参类型生成专属版本。' },
+      { term: '模板参数推断', def: 'myMax(3,5) 自动推断 T=int；推断冲突（int+double）直接编译报错。' },
+      { term: '实例化', def: '编译器把模板"展开"成具体类型代码的过程，发生在编译期。' },
+    ],
+    [
+      { term: '类模板', def: '整个类按类型参数化：vector<int> 与 vector<string> 是同一模板的不同实例。' },
+      { term: '非类型模板参数', def: 'template <typename T, int N> 中的 N：编译期常量，std::array 的长度就是这么定的。' },
+      { term: 'template 头', def: '类外定义成员函数时每个都要重复 template <typename T> 和 Box<T>:: 前缀。' },
+    ],
+    [
+      { term: 'STL 与模板', def: 'STL 容器和算法全是模板实现，所以一份 sort 能排任何可比较类型。' },
+      { term: '模板错误信息', def: '实例化失败时报错又臭又长，读第一层错误（哪个操作不满足）是关键。' },
+      { term: 'concepts', def: 'C++20 的模板约束：requires 子句限定模板参数必须支持的操作，报错瞬间友好。' },
+    ],
+  ],
+  'cpp-ch11': [
+    [
+      { term: 'throw', def: '抛出异常对象：函数立即中止，沿调用链栈展开寻找 catch。' },
+      { term: '标准异常', def: '<stdexcept> 家族：runtime_error、invalid_argument、out_of_range 等，都带 what()。' },
+      { term: '栈展开', def: '异常沿调用链逐层退出，每层局部对象正常析构——RAII 与异常配合的根基。' },
+    ],
+    [
+      { term: 'try-catch', def: 'try 包住可能抛异常的代码，catch 按类型捕获处理，先子类后父类排列。' },
+      { term: 'catch(...)', def: '捕获一切异常的最后兜底，通常用于日志和优雅退出。' },
+      { term: 'e.what()', def: '标准异常的描述信息接口，打印日志必用。' },
+    ],
+    [
+      { term: 'noexcept', def: '承诺函数不抛异常的标记：帮助编译器优化，影响 vector 扩容策略。' },
+      { term: '异常安全级别', def: '基本保证（不泄漏）、强保证（可回滚）、不抛保证（noexcept）三档。' },
+      { term: '异常 vs 错误码', def: '预期内失败（查无此项）用返回值；异常留给"无法继续"的严重错误。' },
+    ],
+  ],
+  'cpp-ch12': [
+    [
+      { term: 'fstream', def: '文件流家族：ifstream 读、ofstream 写、fstream 读写，用法与 cin/cout 一致。' },
+      { term: 'ios::app', def: '追加打开模式：不清空原内容写末尾；默认打开会清空文件。' },
+      { term: '流的 RAII', def: 'fstream 对象析构自动关文件，离开作用域即安全，无需手动 close。' },
+    ],
+    [
+      { term: '流状态位', def: 'good/eof/fail/bad 四个状态；while (in >> x) 靠 fail 状态自动结束。' },
+      { term: 'getline', def: '按行读取（可含空格），配 stringstream 行内解析是处理 CSV 的套路。' },
+      { term: 'clear / ignore', def: 'clear() 复位错误状态；ignore() 丢弃坏输入——读失败后修复流的两步。' },
+    ],
+    [
+      { term: 'stringstream', def: '内存中的流：从字符串按类型拆数据，或把多种数据拼成字符串。' },
+      { term: 'stoi / to_string', def: '字符串与数字互转的库函数，解析失败抛 invalid_argument。' },
+      { term: 'clear + str("")', def: '复用 stringstream 前必须两步：清状态标志 + 清内容缓冲。' },
+    ],
+  ],
+  'cpp-ch13': [
+    [
+      { term: 'Lambda', def: '[捕获](参数){ 体 } 就地定义匿名函数，配 STL 算法天作之合。' },
+      { term: '捕获列表', def: '[] 不捕获、[&] 全引用、[=] 全值、[x,&y] 按需——决定 Lambda 能看到什么。' },
+      { term: '值捕获 vs 引用捕获', def: '值捕获是定义时拍照（副本）；引用捕获是实时监控（注意生命周期）。' },
+    ],
+    [
+      { term: 'auto', def: '编译器自动推断类型：auto it = v.begin() 免去长类型名，初见不明类型的场景慎用。' },
+      { term: '范围 for', def: 'for (const auto& x : v) 遍历容器黄金写法：不拷贝、不可改、全类型通吃。' },
+      { term: '结构化绑定', def: 'auto [k, v] = pair 直接拆包（C++17），遍历 map 时代码清爽一半。' },
+    ],
+    [
+      { term: '移动语义', def: '把大对象的内部资源直接"偷"给新对象而非拷贝，性能关键优化。' },
+      { term: '右值与 &&', def: '右值是将亡的临时值；右值引用 && 能绑定它们，移动构造/赋值的参数类型。' },
+      { term: 'std::move', def: '把变量标记为"可搬走"；move 后变量有效但内容未指定，别再用。' },
+    ],
+  ],
+  'cpp-ch14': [
+    [
+      { term: '栈（Stack）', def: '后进先出（LIFO）结构：push 压入、pop 弹出、top 看顶，像叠盘子。' },
+      { term: '容器适配器', def: 'std::stack/queue 不自己存数据，而是包在 deque 等容器上提供受限接口。' },
+      { term: '括号匹配', def: '栈的经典应用：左括号入栈、右括号弹栈比对，栈空才合法。' },
+    ],
+    [
+      { term: '队列（Queue）', def: '先进先出（FIFO）：队尾 push、队头 front/pop，像排队买票。' },
+      { term: 'deque', def: '双端队列：两头进出都 O(1)，滑动窗口类题目的专用容器。' },
+      { term: 'priority_queue', def: '优先队列（堆实现）：队头永远是最大/最小值，动态取最值场景专用。' },
+    ],
+    [
+      { term: '链表', def: '节点存数据+next 指针串成的链：插入删除 O(1)，随机访问 O(n)。' },
+      { term: '头插法', def: '新节点指向旧头再成为新头：最简单的建表方式，但得到逆序表。' },
+      { term: '快慢指针', def: '快两步慢一步：找中点（快到时慢在中点）、判环（有环必相遇）。' },
+    ],
+  ],
+  'cpp-ch15': [
+    [
+      { term: 'sync_with_stdio(false)', def: '关闭 cin/cout 与 stdio 的同步，输入输出提速数倍；之后不能再混用两套 IO。' },
+      { term: 'cin.tie(nullptr)', def: '解除 cin 与 cout 的绑定（默认 cin 前强制刷 cout），进一步提速。' },
+      { term: '快读', def: 'getchar 逐字符解析整数的手写读入函数，比 cin 快一个量级，百万级输入必备。' },
+    ],
+    [
+      { term: 'bits/stdc++.h', def: '包含全部标准库的头文件，竞赛标配；工程中因拖慢编译不建议使用。' },
+      { term: 'INF = 0x3f3f3f3f', def: '竞赛约定的"无穷大"：约 1e9、相加不溢出、且四字节相同可用 memset 填充。' },
+      { term: 'using 别名', def: 'using ll = long long; 缩短类型名，竞赛模板标配。' },
+    ],
+    [
+      { term: '对拍', def: '暴力程序与正解程序对随机数据比对输出，快速定位正解错误的调试法。' },
+      { term: 'freopen', def: 'freopen("in.txt","r",stdin) 把文件当标准输入，本地调试神器，提交前注释掉。' },
+      { term: '复杂度估算', def: '每秒约 1e8 次运算：n≤5000 想 O(n²)，n≤1e5 想 O(n log n)，n≤1e6 必须 O(n)。' },
+    ],
+  ],
+  'c-ch9': [
+    [
+      { term: "'\\0' 结束符", def: 'C 字符串的唯一边界标志，所有字符串函数靠它知道哪里停。' },
+      { term: '手写库函数', def: '面试常考：strlen/strcpy/strcmp 的本质都是"遍历到 \\0 停"的循环。' },
+      { term: '指针紧缩写法', def: 'while ((*d++ = *s++)); 把复制、移动、判断压进一行，C 的经典风格。' },
+    ],
+    [
+      { term: 'fgets', def: '限定长度的安全行读入函数，替代危险的 gets/scanf("%s")。' },
+      { term: 'strcspn', def: '找第一个属于指定字符集的位置：s[strcspn(s,"\\n")]=0 去掉 fgets 留下的换行。' },
+      { term: 'snprintf / sscanf', def: '格式化进字符串 / 从字符串按格式拆数据，都带边界检查意识。' },
+    ],
+    [
+      { term: 'strtok', def: '按分隔符切字符串：首传字符串后传 NULL 续切；会修改原串且有静态状态。' },
+      { term: 'ctype.h', def: '字符分类库：isdigit/isalpha/isspace/toupper/tolower，比手写范围判断可靠。' },
+      { term: '回文判断', def: '双指针从两头向中间对比，i >= j 时全部相等即回文。' },
+    ],
+  ],
+  'c-ch10': [
+    [
+      { term: 'malloc', def: '堆上申请指定字节数，返回 void* 需转型，失败返回 NULL 必须检查。' },
+      { term: 'sizeof *p', def: 'malloc(n * sizeof *p) 让类型跟随指针，改类型时不用同步修改——防御性写法。' },
+      { term: 'calloc', def: '申请并清零的内存分配：calloc(n, size)，适合数组；malloc 不初始化是垃圾值。' },
+    ],
+    [
+      { term: 'realloc', def: '调整已申请内存大小，内容保留但可能搬家——必须用返回值更新指针。' },
+      { term: '内存泄漏', def: '丢失堆内存指针且没 free：内存永远回不去，长命程序的大敌。' },
+      { term: '临时变量接 realloc', def: 'int *tmp = realloc(p, ...); if (tmp) p = tmp;——防止失败时弄丢原指针。' },
+    ],
+    [
+      { term: 'double free', def: '同一内存释放两次：未定义行为。对策：明确所有权 + free 后立刻置 NULL。' },
+      { term: 'use after free', def: '释放后继续使用那块内存：内容"看起来还在"是假象，随时被覆盖。' },
+      { term: 'AddressSanitizer', def: 'gcc -fsanitize=address 编译即得内存检查器，越界/泄漏/重复释放直接报出。' },
+    ],
+  ],
+  'c-ch11': [
+    [
+      { term: '冒泡 / 选择 / 插入', def: '三大 O(n²) 入门排序：交换沉底 / 选最小放前 / 理牌插入。' },
+      { term: '稳定性', def: '相等元素排序后相对顺序不变叫稳定。冒泡、插入稳定；选择、快排不稳定。' },
+      { term: '几乎有序', def: '插入排序在此场景接近 O(n)，是小数据/近序数据的最优选。' },
+    ],
+    [
+      { term: '快速排序', def: '选基准划分两半再递归的分治排序，平均 O(n log n) 的通用最快内排序。' },
+      { term: 'partition 划分', def: '快排核心：把小于基准的放左边、大于的放右边，返回基准最终位置。' },
+      { term: '最坏退化', def: '每次划分极不均匀时退化为 O(n²)，随机选基准可规避。' },
+    ],
+    [
+      { term: '二分查找', def: '有序数组每次砍一半，O(log n)；前提是必须有序。' },
+      { term: '防溢出 mid', def: 'left + (right - left) / 2 代替 (left + right) / 2，避免大下标相加溢出。' },
+      { term: 'lower_bound', def: '找第一个 ≥ x 的位置：二分答案思想的基础变体。' },
+    ],
+  ],
+  'c-ch12': [
+    [
+      { term: '基例与递推', def: '递归两要素：最简单情形直接给答案（基例），其余缩小问题再调自己（递推）。' },
+      { term: '栈帧', def: '每次函数调用在栈上占一块空间；递归过深会栈溢出（stack overflow）。' },
+      { term: '信任原则', def: '写递归时相信子调用能解决小一号问题，不在脑中逐层展开。' },
+    ],
+    [
+      { term: '记忆化', def: '数组缓存已算结果，重复子问题直接查表：fib 从指数降到 O(n)。' },
+      { term: '重复子问题', def: '朴素 fib 递归慢的根源：fib(38) 被重复计算几千万次。' },
+      { term: '递推填表', def: '自底向上的动态规划：循环代替递归，省栈且顺序可控。' },
+    ],
+    [
+      { term: '分治', def: '分解→解决→合并三步走：快排、归并、二分、汉诺塔都是分治。' },
+      { term: '汉诺塔递归', def: 'n-1 个移走、最大盘到位、n-1 个移回：三行解决 2ⁿ-1 步问题。' },
+      { term: '回溯法', def: '"走到底不行就退回换路"的搜索框架：全排列、八皇后、数独通用。' },
+    ],
+  ],
+  'c-ch13': [
+    [
+      { term: '栈的数组实现', def: '数组 + top 指针：push 是 arr[top++]=x，pop 是 arr[--top]。' },
+      { term: '上溢与下溢', def: '栈满还 push（越界写）/ 栈空还 pop（读垃圾）——两个都必须拦。' },
+      { term: 'top 约定', def: 'top 指栈顶还是栈顶+1，全篇必须统一，混用必出 off-by-one。' },
+    ],
+    [
+      { term: '循环队列', def: '下标取模绕圈：(rear+1)%MAXN，让数组空间循环利用。' },
+      { term: '牺牲一格判满', def: '(rear+1)%MAXN==front 判满、front==rear 判空——否则空满撞车。' },
+      { term: 'FIFO 应用', def: '任务队列、消息缓冲、BFS 层序遍历都是队列的舞台。' },
+    ],
+    [
+      { term: '后缀表达式', def: '逆波兰式：3 4 + 表示 3+4，无需括号优先级，栈求值最方便。' },
+      { term: '栈求值算法', def: '数字入栈；遇运算符弹出两数（先弹的是右操作数）计算后压回。' },
+      { term: '调度场算法', def: '中缀转后缀的标准算法（也用栈），编译器处理表达式的方式。' },
+    ],
+  ],
+  'c-ch14': [
+    [
+      { term: '头结点', def: '数据域不用的哨兵节点：消除"第一个元素"的所有特判，代码统一干净。' },
+      { term: '插入两句顺序', def: 'new->next = prev->next 必须先做，prev->next = new 后做——反了链就断。' },
+      { term: '删除两句顺序', def: 'prev->next = target->next 先绕过，free(target) 后释放。' },
+    ],
+    [
+      { term: '迭代反转', def: 'prev/cur/nxt 三指针接力：每轮 cur->next = prev，齐步前进。' },
+      { term: '快慢指针', def: '快两步慢一步：判环（必相遇）、找中点（快到尾慢在中点）。' },
+      { term: '画图习惯', def: '指针操作前先在纸上画箭头图——链表不翻车的唯一秘诀。' },
+    ],
+    [
+      { term: '双向链表', def: '节点带 prev+next 双指针：可反向遍历、O(1) 删已知节点，维护成本翻倍。' },
+      { term: '循环链表', def: '尾节点 next 指回头部成环，约瑟夫问题的天然模型。' },
+      { term: '约瑟夫问题', def: 'n 人围圈报数到 m 出局求幸存者：循环链表逐个删除的模拟题。' },
+    ],
+  ],
+  'c-ch15': [
+    [
+      { term: '数据模型', def: '先定结构体和存储结构（数组+计数），功能围绕数据设计而非反过来。' },
+      { term: '文本存档格式', def: '每行一条记录"学号 姓名 成绩"，fprintf/fscanf 直接读写，简单可靠。' },
+      { term: '分层设计', def: '数据层（文件）/逻辑层（功能函数）/界面层（菜单）单向依赖，可独立替换。' },
+    ],
+    [
+      { term: '线性查找复用', def: 'findById 返回下标或 -1，删除、修改、查询都建立在它之上。' },
+      { term: '前移删除', def: '数组删元素：后面的整体前移一格、计数减一，无空洞。' },
+      { term: 'qsort 比较函数', def: '返回负/零/正表示小于/等于/大于；浮点比较用 (d>0)-(d<0) 防截断。' },
+    ],
+    [
+      { term: 'scanf 返回值检查', def: '返回成功读到的项数；输入字母返回 0 且残留缓冲区，必须清理。' },
+      { term: '清空缓冲区', def: 'while (getchar() != \'\\n\'); 吃掉残留输入，防菜单死循环。' },
+      { term: '无感持久化', def: '启动自动 load、退出自动 save——用户完全不用操心数据保存。' },
+    ],
+  ],
+  'html-ch9': [
+    [
+      { term: 'transition', def: '属性变化时的平滑过渡：transition: all 0.3s ease，配合 hover 或切类名触发。' },
+      { term: '缓动曲线', def: 'ease/linear/ease-in-out/cubic-bezier：控制动画"先快后慢"的节奏感。' },
+      { term: 'GPU 加速属性', def: 'transform 和 opacity 由合成层处理不触发重排，动画只对它俩做最流畅。' },
+    ],
+    [
+      { term: '@keyframes', def: '定义动画关键帧：from/to 或百分比节点，浏览器自动补间。' },
+      { term: 'animation 简写', def: '名字 时长 曲线 次数：infinite 无限、alternate 往返。' },
+      { term: '补间动画', def: '只给首尾姿势、中间自动生成的动画方式，CSS 动画的本质。' },
+    ],
+    [
+      { term: 'transform', def: '平移/缩放/旋转/斜切四变换，不影响文档流，做位移效果的首选。' },
+      { term: 'transform-origin', def: '变换中心点：默认正中，scale 从角落展开就写 0 0。' },
+      { term: '重排与重绘', def: '改几何属性（width/top）触发重排很贵；transform 跳过布局直接合成。' },
+    ],
+  ],
+  'html-ch10': [
+    [
+      { term: 'CSS 变量', def: '--name: 值 定义、var(--name) 使用；改一处全站变，主题系统的基石。' },
+      { term: ':root', def: '文档根元素选择器，全局 CSS 变量都定义在它上面。' },
+      { term: 'var() 回退值', def: 'var(--x, 默认值)：变量未定义时用默认值兜底。' },
+    ],
+    [
+      { term: 'calc()', def: '混合单位计算：calc(100% - 200px)，加减号两侧必须有空格。' },
+      { term: 'clamp()', def: 'clamp(最小, 首选, 最大)：流式尺寸不出界，响应式字号的标准写法。' },
+      { term: 'vw / vh', def: '视口宽/高的 1%：随窗口缩放的相对单位。' },
+    ],
+    [
+      { term: 'prefers-color-scheme', def: '感知系统明暗主题的媒体查询，深色模式自动切换靠它。' },
+      { term: ':has()', def: '父级选择器：form:has(:invalid) 表单含非法输入时选中表单本身。' },
+      { term: ':focus-visible', def: '仅键盘导航时显示焦点框，兼顾无障碍与鼠标用户观感。' },
+    ],
+  ],
+  'html-ch11': [
+    [
+      { term: 'map / filter', def: '数组变形（每个元素过函数）/ 筛选（留条件为真者），都返回新数组。' },
+      { term: 'reduce', def: '万能聚合：(累加器, 当前值) => 新值，把数组折叠成一个结果。' },
+      { term: '不可变更新', def: '不改原数据而返回新数据的操作风格，链式调用与状态管理的基石。' },
+    ],
+    [
+      { term: '解构赋值', def: 'const { name, age } = obj 一次性取属性；数组用 [a, b] 形式。' },
+      { term: '展开运算符 ...', def: '{...obj, x: 1} 复制并覆盖、[...arr, 4] 复制并追加。' },
+      { term: 'Object.entries', def: '对象转 [键, 值] 数组，配合解构遍历对象最顺手。' },
+    ],
+    [
+      { term: '模板字符串', def: '反引号包裹、${} 嵌表达式、可换行——拼接 HTML 的神器。' },
+      { term: '可选链 ?.', def: 'user?.address?.city：任一环为空就短路返回 undefined，告别连环判空。' },
+      { term: '空值合并 ??', def: '只在 null/undefined 时用默认值；0 和 "" 是合法值（与 || 的关键区别）。' },
+    ],
+  ],
+  'html-ch12': [
+    [
+      { term: '异步', def: '发起耗时任务后不傻等，结果好了再回调——页面不冻结的根本机制。' },
+      { term: '事件循环', def: 'JS 引擎反复检查任务队列并执行完成任务的回调，异步的底层发动机。' },
+      { term: '回调地狱', def: '多层异步嵌套成金字塔代码，Promise 正是为终结它而生。' },
+    ],
+    [
+      { term: 'Promise', def: '"未来结果的凭证"：pending → fulfilled/rejected，状态落定不可逆。' },
+      { term: 'then / catch / finally', def: '成功回调 / 错误兜底 / 无论如何都执行，链式调用取代嵌套。' },
+      { term: 'fetch', def: '浏览器内置的网络请求 API，返回 Promise，配 .then(r=>r.json()) 解析。' },
+    ],
+    [
+      { term: 'async / await', def: '把异步写成同步模样的语法糖：await 等结果但不卡页面，只能在 async 函数里用。' },
+      { term: 'try/catch 包 await', def: 'async 函数里用同步式 try/catch 兜住异步错误，比 .catch 链直观。' },
+      { term: 'Promise.all 并行', def: '多个请求先同时发出再统一等待，总耗时取最长而非求和。' },
+    ],
+  ],
+  'html-ch13': [
+    [
+      { term: 'submit 事件', def: '表单提交时触发；e.preventDefault() 阻止跳转，JS 接管的第一步。' },
+      { term: 'FormData', def: 'new FormData(form) 收集所有带 name 的控件值，配 fetch 直接提交。' },
+      { term: '事件委托', def: '监听绑在父级、靠 e.target 识别来源——一个监听器管全部输入框。' },
+    ],
+    [
+      { term: 'input 事件', def: '每次键入立即触发，做"边输边验"；blur 失焦触发，做"输完再验"。' },
+      { term: 'checkValidity()', def: '查询表单/控件是否通过 HTML5 内置验证（required、type 等）。' },
+      { term: 'setCustomValidity', def: '设置自定义错误消息，让浏览器自带气泡显示你的规则。' },
+    ],
+    [
+      { term: '防重复提交', def: '提交中 disabled 按钮 + 显示"提交中"，响应回来再恢复。' },
+      { term: 'JSON 提交', def: 'fetch POST 三件套：method、Content-Type 头、JSON.stringify 的 body。' },
+      { term: '前端验证边界', def: '前端验证只做体验优化，可被绕过；安全校验必须在后端重做。' },
+    ],
+  ],
+  'html-ch14': [
+    [
+      { term: 'localStorage', def: '浏览器持久键值仓库：关机也在、同域共享、约 5MB，只存字符串。' },
+      { term: 'JSON 序列化配套', def: '存对象 setItem 前 stringify、取后 parse——否则得到 "[object Object]"。' },
+      { term: '同源策略', def: '存储按域名隔离：a.com 读不到 b.com 的数据，浏览器安全基石。' },
+    ],
+    [
+      { term: 'sessionStorage', def: '用法同 localStorage，但限当前标签页，关页即清。' },
+      { term: 'Cookie', def: '4KB 小容量、随请求自动带往服务器、可设过期——登录态标识的专用通道。' },
+      { term: '存储选型', def: '长期偏好 localStorage、会话暂存 sessionStorage、服务器要读用 Cookie。' },
+    ],
+    [
+      { term: 'location', def: '地址栏对象：href 读跳网址、reload 刷新、search 拿查询串。' },
+      { term: 'history.pushState', def: '无刷新改地址并入历史——SPA 前端路由的基石。' },
+      { term: 'navigator', def: '浏览器信息对象：userAgent 设备、onLine 联网、clipboard 剪贴板。' },
+    ],
+  ],
+  'html-ch15': [
+    [
+      { term: '数据驱动', def: 'JS 数据是唯一真相源，界面由 render() 按数据统一重绘，不手改 DOM。' },
+      { term: 'render 函数', def: '"把数据画出来"的函数：任何操作只改数据再调 render，思路永不乱。' },
+      { term: '唯一 id', def: 'Date.now() 时间戳当 id，让每条待办可被精确定位。' },
+    ],
+    [
+      { term: '事件委托', def: '动态元素绑不了事件？监听绑父级 ul，e.target 判断点的是谁。' },
+      { term: 'closest("li")', def: '从点击目标向上找最近的 li 祖先，拿到 data-id 定位数据。' },
+      { term: 'filter 删除', def: 'todos.filter(t => t.id !== id) 生成不含目标的新数组——不可变删除。' },
+    ],
+    [
+      { term: '渲染时过滤', def: '筛选不改数据：render 时按状态过滤后再渲染，三态切换零成本。' },
+      { term: '完成态样式', def: '.done 类名控制删除线+半透明，配 transition 有划线动画。' },
+      { term: '空态提示', def: '列表为空时显示引导文案，细节体验的分水岭。' },
+    ],
+  ],
 }
